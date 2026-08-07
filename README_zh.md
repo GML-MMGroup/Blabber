@@ -126,20 +126,19 @@ Blabber 像真正的节目导播一样切镜头：全景交代环境，特写对
 
 环境要求：
 
-- Git 与 [Git LFS](https://git-lfs.com/)
+- Git
 - Node.js `>=22.13.0`
 - Python `>=3.9`
 - `ffmpeg` 与 `ffprobe` 可在终端直接运行，并包含 `libvpx-vp9` 支持
-- 至少约 1 GB 可用磁盘空间，用于运行缓存和视频输出；随仓库发布的
-  VP9 Alpha 动作素材下载量约 9 MB
+- 至少约 1 GB 可用磁盘空间，用于运行缓存和视频输出。随仓库发布的
+  VP9 Alpha 动作素材约 9 MB，会由普通 Git clone 直接下载，不需要
+  Git LFS。
 
 首次安装：
 
 ```bash
-git lfs install
 git clone https://github.com/GML-MMGroup/Blabber.git
 cd Blabber
-git lfs pull
 
 python3 -m venv .venv
 source .venv/bin/activate

@@ -128,20 +128,19 @@ All orchestrated by AI agents, fully editable in the built-in editor.
 
 Prerequisites:
 
-- Git and [Git LFS](https://git-lfs.com/)
+- Git
 - Node.js `>=22.13.0`
 - Python `>=3.9`
 - `ffmpeg` and `ffprobe` available on `PATH`, with `libvpx-vp9` support
-- About 1 GB of free disk space for runtime caches and output; the bundled
-  VP9 Alpha action assets require about 9 MB of download space
+- About 1 GB of free disk space for runtime caches and output. The bundled
+  VP9 Alpha action assets add about 9 MB to the regular Git clone; Git LFS is
+  not required.
 
 First-time setup:
 
 ```bash
-git lfs install
 git clone https://github.com/GML-MMGroup/Blabber.git
 cd Blabber
-git lfs pull
 
 python3 -m venv .venv
 source .venv/bin/activate

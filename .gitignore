@@ -49,6 +49,9 @@ __pycache__/
 /assets/action/dog/*/
 /assets/action/duck/*/
 
+# Demo source videos stay local; the published runtime does not require them.
+/assets/demo/*.mp4
+
 /assets/character/*
 !/assets/character/funny-podcast-dog.png
 !/assets/character/funny-podcast-duck.png
