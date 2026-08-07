@@ -1,0 +1,7 @@
+output/
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.tmp
+blabber/vendor/

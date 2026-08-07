@@ -11,8 +11,8 @@
 
 
 [![License](https://pfst.cf2.poecdn.net/base/image/bc559dcb789965a729af04970ae270a606dd628045c12738cf0e2b09945ce0ce?pmaid=639574781)](./LICENSE)
-[![Stars](https://img.shields.io/github/stars/GML-MMGroup/Blabber?style=social)](https://github.com/GML-MMGroup/Blabber)
-[![Version](https://pfst.cf2.poecdn.net/base/image/d8617c7287e62a79e87bf1290fad68c5779fb435e813c276f13163b85354c97c?pmaid=639574779)](https://github.com/GML-MMGroup/Blabber/releases)
+[![Stars](https://img.shields.io/github/stars/ChangAo0310/Blabber?style=social)](https://github.com/ChangAo0310/Blabber)
+[![Version](https://pfst.cf2.poecdn.net/base/image/d8617c7287e62a79e87bf1290fad68c5779fb435e813c276f13163b85354c97c?pmaid=639574779)](https://github.com/ChangAo0310/Blabber/releases)
 [![Discord](https://pfst.cf2.poecdn.net/base/image/0b5fd2f10197888bc00517f9bad7947905b30d323ef0d1eed24484273bc310c8?pmaid=639574780)](https://discord.gg/yourlink)
 
 
@@ -24,14 +24,76 @@
 
 ## 🎥 See It In Action
 
-<!-- 👇 在这里放核心演示 GIF：一句 prompt → 完整动画播客成片 -->
 <div align="center">
-  <img src="./assets/demo.gif" alt="Blabber Demo" width="90%" />
+  <a href="./assets/demo/final-studio.mp4?raw=1">
+    <img src="./assets/demo/final-studio-preview.jpg" alt="Zoo podcast video preview featuring Awang and Gaga" width="90%" />
+  </a>
+  <p><a href="./assets/demo/final-studio.mp4?raw=1">▶ Play the complete example video (4m 10s)</a></p>
 </div>
 
 <br/>
 
 > Just type one sentence — *"Make a podcast about coffee culture"* — and Blabber writes the dialogue, casts two hosts, voices every line, syncs every lip movement to the audio waveform, directs the cameras, and renders the final cut. **You describe the show. The agents make it.**
+
+### Complete Local Installation
+
+Prerequisites:
+
+- Git and [Git LFS](https://git-lfs.com/)
+- Node.js `>=22.13.0`
+- Python `>=3.9`
+- `ffmpeg` and `ffprobe` available on `PATH`
+- About 4 GB of free disk space (Git LFS downloads about 0.8 GB of action assets)
+
+First-time setup:
+
+```bash
+git lfs install
+git clone https://github.com/ChangAo0310/Blabber.git
+cd Blabber
+git lfs pull
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r mvp/requirements.txt
+cp mvp/.env.example mvp/.env
+
+cd site
+npm ci
+```
+
+On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` and create
+the configuration file with `Copy-Item mvp/.env.example mvp/.env`.
+
+The web UI uses Volcengine PodcastTTS to return two-host dialogue slices, per-slice MP3 files, and the complete MP3 in one API request, ready for MP4 generation. After setup, start the two local services in separate terminals.
+
+Terminal 1 — backend:
+
+```bash
+cd Blabber
+source .venv/bin/activate
+cd site
+npm run dev:mvp
+```
+
+Terminal 2 — frontend:
+
+```bash
+cd Blabber
+cd site
+npm run dev
+```
+
+Open the local URL printed in the terminal (normally `http://localhost:3000`). Configure the Doubao Speech PodcastTTS App ID and Access Token under service settings. To use Seedream or Seedance, additionally run `python -m pip install -r mvp/requirements-ark.txt` and set the optional `ARK_API_KEY` in `mvp/.env`. This credential file is ignored by Git and must not be committed.
+
+Enter a topic or select a document, then click **Generate script and audio**. Once audio is ready, continue with MP4 generation using one of the four bundled video characters.
+
+### Document ingestion API
+
+`POST /api/mvp/document-jobs` uses PodcastTTS document mode (`action=0`). Send exactly one source: `input_url`, `input_text`, or an uploaded file as `file_name` plus `file_base64`; `topic` is optional. The UI accepts `.txt`, `.md`, `.html`, `.json`, `.csv`, `.docx`, and `.pdf` files up to 20 MB and shows the selected file name and size. Scanned PDFs must be OCRed first. The endpoint returns `202` with a job ID. Poll `GET /api/mvp/jobs/{id}`; the completed job includes `episode.turns`, `clips[].audio_url`, `audio_url`, and `provider_audio_url`.
+
+Jobs are persisted in `mvp/output/jobs-history.json`; read recent records from `GET /api/mvp/history`. The UI can restore saved scripts, audio slices, and videos, while identical new inputs reuse completed results without another paid request. During generation, `GET /api/mvp/jobs/{id}/events` streams accumulated script and audio slices over SSE.
 
 ---
 
@@ -39,7 +101,7 @@
 
 - **[2026-XX-XX]** 🎉 Blabber preview is now available on GitHub!
 - **[2026-XX-XX]** 🚀 Released AI Copilot — generate and revise scripts through conversation, right inside the editor.
-- **[2026-XX-XX]** ✨ Asset library expanded: 50+ characters, 30+ scenes, 60+ AI voices.
+- **[2026-XX-XX]** ✨ The first release includes 4 video-ready characters and 9 scenes.
 
 <!-- 后续更新持续追加到这里 -->
 
@@ -50,18 +112,9 @@
 > Real animated podcast episodes generated with Blabber, from a single prompt each.
 > <!-- 在这里放不同主题的成片案例，建议用视频封面缩略图 + 播放链接 -->
 
-<table>
-  <tr>
-    <td align="center"><b>☕ Coffee Culture</b><br/><img src="./assets/cases/coffee.gif" width="240"/></td>
-    <td align="center"><b>💻 Tech Talk</b><br/><img src="./assets/cases/tech.gif" width="240"/></td>
-    <td align="center"><b>🎬 Movie Review</b><br/><img src="./assets/cases/movie.gif" width="240"/></td>
-  </tr>
-  <tr>
-    <td align="center"><b>📚 Book Club</b><br/><img src="./assets/cases/book.gif" width="240"/></td>
-    <td align="center"><b>🏀 Sports Banter</b><br/><img src="./assets/cases/sports.gif" width="240"/></td>
-    <td align="center"><b>➕ More coming</b><br/><img src="./assets/cases/more.gif" width="240"/></td>
-  </tr>
-</table>
+| ☕ Coffee Culture | 💻 Tech Talk | 🎬 Movie Review |
+|---|---|---|
+| 📚 Book Club | 🏀 Sports Banter | ➕ More topics |
 
 ---
 
@@ -103,10 +156,10 @@ Every syllable drives the character's mouth shapes. Change a line of dialogue, a
 ### 6. 🎥 Automated Camera Direction
 Blabber cuts like a real show director: wide shots to establish, close-ups on the speaker, reaction shots on the listener, with cut timing driven by the rhythm of the conversation.
 
-### 7. 🗂️ Rich Built-In Libraries
-- **50+ Characters** — diverse animated hosts with consistent identity across episodes
-- **30+ Scenes** — studios, cozy rooms, night setups, outdoor sets
-- **60+ AI Voices** — warm, bright, calm, energetic, across languages and ages
+### 7. 🗂️ Bundled Release Library
+- **4 video characters** — Sunny, Lively, Awang, and Gaga
+- **9 scenes** — podcast studio, zoo, library, seaside, space, tea room, and more
+- **Character-matched voices** — a dedicated PodcastTTS voice prompt for each character
 
 Mix and match freely; a character stays visually consistent across every shot and every episode.
 

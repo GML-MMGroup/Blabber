@@ -10,8 +10,8 @@
 **一句提示词，生成一整期动画播客节目 — 对白、配音、口型、运镜、成片，全流程自动化。**
 
 [![License](https://pfst.cf2.poecdn.net/base/image/bc559dcb789965a729af04970ae270a606dd628045c12738cf0e2b09945ce0ce?pmaid=639576685)](./LICENSE)
-[![Stars](https://pfst.cf2.poecdn.net/base/image/c71a5553a5914ff023b4ec0e52df729b1786fd430f7563c6eb700b1ee44b6a02?pmaid=639576682)](https://github.com/GML-MMGroup/Blabber)
-[![Version](https://pfst.cf2.poecdn.net/base/image/d8617c7287e62a79e87bf1290fad68c5779fb435e813c276f13163b85354c97c?pmaid=639576684)](https://github.com/GML-MMGroup/Blabber/releases)
+[![Stars](https://pfst.cf2.poecdn.net/base/image/c71a5553a5914ff023b4ec0e52df729b1786fd430f7563c6eb700b1ee44b6a02?pmaid=639576682)](https://github.com/ChangAo0310/Blabber)
+[![Version](https://pfst.cf2.poecdn.net/base/image/d8617c7287e62a79e87bf1290fad68c5779fb435e813c276f13163b85354c97c?pmaid=639576684)](https://github.com/ChangAo0310/Blabber/releases)
 [![Discord](https://pfst.cf2.poecdn.net/base/image/0b5fd2f10197888bc00517f9bad7947905b30d323ef0d1eed24484273bc310c8?pmaid=639576683)](https://discord.gg/yourlink)
 
 [English](./README.md) · **简体中文** · [在线体验](#) · [文档](#)
@@ -22,14 +22,84 @@
 
 ## 🎥 效果演示
 
-<!-- 👇 在这里放核心演示 GIF：一句 prompt → 完整动画播客成片 -->
 <div align="center">
-  <img src="./assets/demo.gif" alt="Blabber Demo" width="90%" />
+  <a href="./assets/demo/final-studio.mp4?raw=1">
+    <img src="./assets/demo/final-studio-preview.jpg" alt="阿汪与嘎嘎的动物园播客视频预览" width="90%" />
+  </a>
+  <p><a href="./assets/demo/final-studio.mp4?raw=1">▶ 点击播放完整示例视频（4 分 10 秒）</a></p>
 </div>
 
 <br/>
 
 > 只需输入一句话 — *"做一期关于咖啡文化的播客"* — Blabber 就会自动编写对白、安排两位主持人、逐句配音、将口型逐帧对齐音频波形、规划运镜切换，并渲染出最终成片。**你描述节目，Agent 负责制作。**
+
+### 本地完整安装
+
+环境要求：
+
+- Git 与 [Git LFS](https://git-lfs.com/)
+- Node.js `>=22.13.0`
+- Python `>=3.9`
+- `ffmpeg` 与 `ffprobe` 可在终端直接运行
+- 至少约 4 GB 可用磁盘空间（Git LFS 下载约 0.8 GB 动作素材）
+
+首次安装：
+
+```bash
+git lfs install
+git clone https://github.com/ChangAo0310/Blabber.git
+cd Blabber
+git lfs pull
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r mvp/requirements.txt
+cp mvp/.env.example mvp/.env
+
+cd site
+npm ci
+```
+
+Windows PowerShell 使用 `.venv\Scripts\Activate.ps1` 激活虚拟环境，并用
+`Copy-Item mvp/.env.example mvp/.env` 创建配置文件。
+
+网页已接入火山引擎 PodcastTTS：一次 API 请求直接返回双主持切片文本、逐切片 MP3 与完整 MP3，并可继续生成真实 MP4。首次安装完成后，分别打开两个终端。
+
+终端一（后端）：
+
+```bash
+cd Blabber
+source .venv/bin/activate
+cd site
+npm run dev:mvp
+```
+
+终端二（前端）：
+
+```bash
+cd Blabber
+cd site
+npm run dev
+```
+
+然后访问终端显示的本地地址（默认 `http://localhost:3000`）。在“服务环境配置”中填写豆包语音 PodcastTTS 的 App ID 与 Access Token。需要使用 Seedream/Seedance 时，再执行 `python -m pip install -r mvp/requirements-ark.txt`，并在 `mvp/.env` 中填写可选的 `ARK_API_KEY`。密钥文件已被 Git 忽略，请勿提交。
+
+输入主题或传入文档后点击“生成脚本和音频”，页面会显示 PodcastTTS 返回的切片文本与音频进度；音频完成后可以继续使用四个内置角色生成 MP4。
+
+### 文档接入接口
+
+`POST /api/mvp/document-jobs` 使用 PodcastTTS 的文档模式（`action=0`），支持传入网页/可下载文档 URL、长文本或本地文件。前端可直接选择 `.txt`、`.md`、`.html`、`.json`、`.csv`、`.docx`、`.pdf` 文件（最大 20 MB），选中文件后会显示文件名和大小：
+
+```bash
+curl -X POST http://127.0.0.1:8787/api/mvp/document-jobs \
+  -H 'Content-Type: application/json' \
+  -d '{"input_url":"https://example.com/article","topic":"文章解读"}'
+```
+
+也可以将请求体改为 `{"input_text":"文档正文……","topic":"文档解读"}`，或上传 Base64 文件：`{"file_name":"report.pdf","file_base64":"...","topic":"报告解读"}`。`input_url`、`input_text` 和文件上传三种来源必须且只能提供一种。扫描版 PDF 需要先进行 OCR。接口返回 `202` 和任务 ID，通过 `GET /api/mvp/jobs/{id}` 查询；完成后响应包含 `episode.turns`、`clips[].audio_url`、`audio_url` 和 `provider_audio_url`。
+
+生成任务会持久化到 `mvp/output/jobs-history.json`，`GET /api/mvp/history` 可读取最近记录。前端可以直接恢复已有脚本、切片音频和视频；相同的新输入会复用已完成结果，不再重复调用付费接口。生成过程中，`GET /api/mvp/jobs/{id}/events` 通过 SSE 实时推送累计脚本切片和音频切片。
 
 ---
 
@@ -37,7 +107,7 @@
 
 - **[2026-XX-XX]** 🎉 Blabber 预览版正式登陆 GitHub！
 - **[2026-XX-XX]** 🚀 发布 AI Copilot — 在编辑器内通过对话生成和修改脚本。
-- **[2026-XX-XX]** ✨ 素材库扩充：50+ 角色、30+ 场景、60+ AI 音色。
+- **[2026-XX-XX]** ✨ 首个发布版本内置 4 个可生成视频角色与 9 个场景。
 
 <!-- 后续更新持续追加到这里 -->
 
@@ -48,18 +118,9 @@
 > 以下均为 Blabber 真实生成的动画播客节目，每期只用了一句提示词。
 > <!-- 在这里放不同主题的成片案例，建议用视频封面缩略图 + 播放链接 -->
 
-<table>
-  <tr>
-    <td align="center"><b>☕ 咖啡文化</b><br/><img src="./assets/cases/coffee.gif" width="240"/></td>
-    <td align="center"><b>💻 科技闲聊</b><br/><img src="./assets/cases/tech.gif" width="240"/></td>
-    <td align="center"><b>🎬 电影评论</b><br/><img src="./assets/cases/movie.gif" width="240"/></td>
-  </tr>
-  <tr>
-    <td align="center"><b>📚 读书分享</b><br/><img src="./assets/cases/book.gif" width="240"/></td>
-    <td align="center"><b>🏀 体育侃谈</b><br/><img src="./assets/cases/sports.gif" width="240"/></td>
-    <td align="center"><b>➕ 更多题材陆续更新</b><br/><img src="./assets/cases/more.gif" width="240"/></td>
-  </tr>
-</table>
+| ☕ 咖啡文化 | 💻 科技闲聊 | 🎬 电影评论 |
+|---|---|---|
+| 📚 读书分享 | 🏀 体育侃谈 | ➕ 更多题材 |
 
 ---
 
@@ -101,10 +162,10 @@ Blabber 是一个**专为播客视频创作打造的 AI 生产平台**。你不�
 ### 6. 🎥 自动化运镜
 Blabber 像真正的节目导播一样切镜头：全景交代环境，特写对准说话人，反应镜头给到聆听者，切换节奏跟随对话的呼吸感。
 
-### 7. 🗂️ 丰富的内置素材库
-- **50+ 角色** — 风格多样的动画主持人，跨集保持形象一致
-- **30+ 场景** — 演播室、温馨小屋、夜间布景、户外场景
-- **60+ AI 音色** — 温暖、明亮、沉稳、活力，覆盖多语言与多年龄段
+### 7. 🗂️ 内置发布素材库
+- **4 个视频角色** — 阳光男生、活力女生、阿汪、嘎嘎
+- **9 个场景** — 播客间、动物园、图书馆、海滨、太空、茶室等
+- **角色专属声线** — 每个角色都有匹配的 PodcastTTS 声线提示
 
 自由组合搭配；同一角色在每个镜头、每期节目中都保持视觉一致。
 

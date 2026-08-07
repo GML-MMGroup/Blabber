@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Optional SDK for Seedream / Seedance features.
+volcengine-python-sdk[ark]>=5.0.42
