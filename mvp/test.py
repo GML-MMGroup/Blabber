@@ -86,10 +86,10 @@ def main() -> None:
     parser.add_argument(
         "--character",
         choices=character_choices,
-        default="cartoon-male",
+        default="funny-podcast-duck",
         help=(
             "角色 ID，对应 assets/character/<角色ID>.png；"
-            "默认 cartoon-male"
+            "默认 funny-podcast-duck"
         ),
     )
     parser.add_argument(

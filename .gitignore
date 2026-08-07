@@ -30,40 +30,35 @@ __pycache__/
 *.tmp
 *.temp
 
-# Release only the four characters that currently support video generation.
+# Release only the two characters that currently support video generation.
 # Other character assets remain in place locally, but Git does not track them.
 /assets/action/*
-!/assets/action/male/
-!/assets/action/male/**
-!/assets/action/female/
-!/assets/action/female/**
 !/assets/action/dog/
 !/assets/action/dog/**
 !/assets/action/duck/
 !/assets/action/duck/**
 
-# Inside the four supported roles, publish only the transparent runtime MOVs.
-# Raw non-alpha clips and frame-generation workdirs stay local.
-/assets/action/male/*.mov
-!/assets/action/male/*-alpha-prores4444.mov
-/assets/action/female/*.mov
-!/assets/action/female/*-alpha-prores4444.mov
+# Keep the ProRes masters local and publish only lightweight VP9 Alpha files.
+# The compositor prefers MOV locally and falls back to WebM in GitHub clones.
 /assets/action/dog/*.mov
-!/assets/action/dog/*-alpha-prores4444.mov
 /assets/action/duck/*.mov
-!/assets/action/duck/*-alpha-prores4444.mov
-/assets/action/male/*/
-/assets/action/female/*/
+/assets/action/dog/*.webm
+!/assets/action/dog/*-alpha-vp9.webm
+/assets/action/duck/*.webm
+!/assets/action/duck/*-alpha-vp9.webm
 /assets/action/dog/*/
 /assets/action/duck/*/
 
 /assets/character/*
-!/assets/character/cartoon-male.png
-!/assets/character/cartoon-female.png
 !/assets/character/funny-podcast-dog.png
 !/assets/character/funny-podcast-duck.png
 
-# Frontend copies for characters outside the current four-role release.
+# Publish only the Zoo background and foreground; keep other scene sources local.
+/assets/background/*
+!/assets/background/zoo_background.png
+!/assets/background/zoo_foreground.png
+
+# Frontend copies for characters outside the current two-role release.
 /site/public/anime-host-*.png
 /site/public/clay-*.png
 /site/public/flat-tech-host-*.png
@@ -71,6 +66,18 @@ __pycache__/
 /site/public/profes-*.png
 /site/public/retro-*.png
 /site/public/toon3d-*.png
+
+# Keep the frontend release aligned with Duck + Dog in the Zoo scene.
+/site/public/cartoon-male.png
+/site/public/cartoon-female.png
+/site/public/action-preview-male.png
+/site/public/action-preview-female.png
+/site/public/funny-podcast-dog-alpha-v2.png
+/site/public/funny-podcast-duck-alpha-v2.png
+/site/public/scene-*.png
+/site/public/scene-*-composite.jpg
+!/site/public/scene-zoo.png
+!/site/public/scene-zoo-foreground.png
 
 # Keep macOS metadata ignored even inside explicitly included asset folders.
 **/.DS_Store

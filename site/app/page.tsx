@@ -39,8 +39,7 @@ type Character = {
   name: string;
   image: string;
   actionPreview: string;
-  actionId: "male" | "female" | "dog" | "duck";
-  voiceSet: "cartoon" | "professional";
+  actionId: "dog" | "duck";
 };
 type Voice = { id: string; actionId: Character["actionId"]; name: string; note: string; prompt: string; color: string };
 type Placement = { x: number; y: number; scale: number };
@@ -65,22 +64,12 @@ type ConfigResponse = {
 const defaultPrompt = "做一期关于咖啡文化的轻松播客";
 
 const backgrounds: Background[] = [
-  { id: "studio-clean", name: "深夜播客间", image: "/scene-studio-clean.png", foreground: "/scene-studio-foreground.png", accent: "#885cff" },
   { id: "zoo", name: "动物园直播间", image: "/scene-zoo.png", foreground: "/scene-zoo-foreground.png", accent: "#34a978" },
-  { id: "library", name: "复古图书馆", image: "/scene-library.png", foreground: "/scene-library-foreground.png", thumbnail: "/scene-library-composite.jpg", accent: "#c9864b" },
-  { id: "seaside", name: "海滨电台", image: "/scene-seaside.png", foreground: "/scene-seaside-foreground.png", thumbnail: "/scene-seaside-composite.jpg", accent: "#25afc6" },
-  { id: "space", name: "星际直播舱", image: "/scene-space.png", foreground: "/scene-space-foreground.png", thumbnail: "/scene-space-composite.jpg", accent: "#6a68ff" },
-  { id: "ink-tea", name: "水墨茶室", image: "/scene-ink-tea.png", foreground: "/scene-ink-tea-foreground.png", thumbnail: "/scene-ink-tea-composite.jpg", accent: "#77a58f" },
-  { id: "anime-neon", name: "霓虹动漫台", image: "/scene-anime-neon.png", foreground: "/scene-anime-neon-foreground.png", thumbnail: "/scene-anime-neon-composite.jpg", accent: "#ff4f8b" },
-  { id: "flat-tech", name: "扁平科技台", image: "/scene-flat-tech.png", foreground: "/scene-flat-tech-foreground.png", thumbnail: "/scene-flat-tech-composite.jpg", accent: "#5865f2" },
-  { id: "lowpoly", name: "低多边形演播室", image: "/scene-lowpoly.png", foreground: "/scene-lowpoly-foreground.png", thumbnail: "/scene-lowpoly-composite.jpg", accent: "#e87836" },
 ];
 
 const characters: Character[] = [
-  { id: "cartoon-male", name: "阳光男生", image: "/cartoon-male.png", actionPreview: "/action-preview-male.png", actionId: "male", voiceSet: "cartoon" },
-  { id: "cartoon-female", name: "活力女生", image: "/cartoon-female.png", actionPreview: "/action-preview-female.png", actionId: "female", voiceSet: "cartoon" },
-  { id: "dog", name: "阿汪", image: "/funny-podcast-dog.png", actionPreview: "/action-preview-dog.png", actionId: "dog", voiceSet: "cartoon" },
-  { id: "duck", name: "嘎嘎", image: "/funny-podcast-duck.png", actionPreview: "/action-preview-duck.png", actionId: "duck", voiceSet: "cartoon" },
+  { id: "duck", name: "嘎嘎", image: "/funny-podcast-duck.png", actionPreview: "/action-preview-duck.png", actionId: "duck" },
+  { id: "dog", name: "阿汪", image: "/funny-podcast-dog.png", actionPreview: "/action-preview-dog.png", actionId: "dog" },
 ];
 
 const defaultPlacements: Placement[] = [
@@ -89,10 +78,8 @@ const defaultPlacements: Placement[] = [
 ];
 
 const voices: Voice[] = [
-  { id: "cartoon_male", actionId: "male", name: "阳光男生专属", note: "PodcastTTS · 自动双声线", prompt: "青年男性，普通话标准，声音清朗温暖，带自然笑意和少年感；性格阳光外向、亲切有活力，语速稍快但吐字清楚，像朋友聊天般轻松。", color: "#547cff" },
-  { id: "cartoon_female", actionId: "female", name: "活力女生专属", note: "PodcastTTS · 自动双声线", prompt: "青年女性，普通话标准，声音温暖明亮、柔和甜润但不过分稚嫩；性格亲切活泼，带自然笑意，节奏轻快，像充满好奇心的年轻播客主持人。", color: "#b065ef" },
-  { id: "podcast_dog", actionId: "dog", name: "阿汪专属", note: "PodcastTTS · 自动双声线", prompt: "青年男性卡通角色，普通话标准，声音阳光清朗、热情有活力；语气忠诚友善又略带顽皮，节奏轻快，像幽默亲切的年轻播客主持人。", color: "#31b789" },
   { id: "podcast_duck", actionId: "duck", name: "嘎嘎专属", note: "PodcastTTS · 自动双声线", prompt: "青年女性卡通角色，普通话标准，声音清脆明亮、机灵俏皮；语气自信活泼，带自然笑意，吐字清楚，像反应敏捷的年轻播客主持人。", color: "#ff9254" },
+  { id: "podcast_dog", actionId: "dog", name: "阿汪专属", note: "PodcastTTS · 自动双声线", prompt: "青年男性卡通角色，普通话标准，声音阳光清朗、热情有活力；语气忠诚友善又略带顽皮，节奏轻快，像幽默亲切的年轻播客主持人。", color: "#31b789" },
 ];
 
 function fileToBase64(file: File): Promise<string> {
@@ -130,8 +117,8 @@ export default function Home() {
   const sourceFileInput = useRef<HTMLInputElement>(null);
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState("");
-  const [backgroundId, setBackgroundId] = useState("studio-clean");
-  const [selectedCharacters, setSelectedCharacters] = useState<string[]>(["cartoon-male", "cartoon-female"]);
+  const [backgroundId, setBackgroundId] = useState("zoo");
+  const [selectedCharacters, setSelectedCharacters] = useState<string[]>(["duck", "dog"]);
   const [placements, setPlacements] = useState<Placement[]>(defaultPlacements);
   const [configOpen, setConfigOpen] = useState(false);
   const [config, setConfig] = useState<ConfigResponse | null>(null);
@@ -154,7 +141,7 @@ export default function Home() {
   const audioProgress = audioReady ? 100 : audioActive && job?.total ? Math.round((job.completed / job.total) * 100) : 0;
   const videoProgress = videoReady ? 100 : videoActive && job?.total ? Math.round((job.completed / job.total) * 100) : 0;
 
-  const characterSet = selected.every((item) => item.voiceSet === "professional") ? "professional" : "cartoon";
+  const characterSet = "cartoon";
 
   useEffect(() => { void loadHistory(); }, []);
 

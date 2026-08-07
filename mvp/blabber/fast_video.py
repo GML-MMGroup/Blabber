@@ -35,14 +35,9 @@ class CharacterSpec:
 
 CHARACTER_SETS = {
     "cartoon": {
-        "background": "scene2.png",
-        "HostA": CharacterSpec("cartoon-male.png", "left", .340, .405, .585, .50, .423),
-        "HostB": CharacterSpec("cartoon-female.png", "right", .432, .400, .580, .50, .515),
-    },
-    "professional": {
-        "background": "scene1.png",
-        "HostA": CharacterSpec("profes-male.png", "left", .297, .405, .590, .50, .390),
-        "HostB": CharacterSpec("profes-female.png", "right", .273, .405, .590, .50, .360),
+        "background": "background/zoo_background.png",
+        "HostA": CharacterSpec("character/funny-podcast-duck.png", "left", .420, .405, .610, .51, .625),
+        "HostB": CharacterSpec("character/funny-podcast-dog.png", "right", .410, .420, .620, .52, .665),
     },
 }
 

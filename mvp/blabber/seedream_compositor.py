@@ -13,24 +13,19 @@ OUTPUT_ROOT = Path(__file__).resolve().parents[1] / "generated_scenes"
 
 PRESET_IMAGES = {
     "cartoon": (
-        "cartoon-male.png",
-        "cartoon-female.png",
-        "scene2.png",
-    ),
-    "professional": (
-        "profes-male.png",
-        "profes-female.png",
-        "scene1.png",
+        "character/funny-podcast-duck.png",
+        "character/funny-podcast-dog.png",
+        "background/zoo_background.png",
     ),
 }
 
 DEFAULT_PROMPT = (
-    "图一是男主持人物参考，图二是女主持人物参考，图三是播客录音棚背景。"
-    "将图一和图二的两位人物自然合成到图三的场景中，男主持坐在左侧麦克风前，"
-    "女主持坐在右侧麦克风前。严格保持两位人物的脸部特征、发型、服装、耳机和"
+    "图一是鸭子主持人嘎嘎，图二是狗狗主持人阿汪，图三是动物园播客背景。"
+    "将图一和图二的两位角色自然合成到图三的场景中，嘎嘎坐在左侧麦克风前，"
+    "阿汪坐在右侧麦克风前。严格保持两位角色的脸部特征、服装、耳机和"
     "原有美术风格，保持背景的空间布局、灯光和 ON AIR 标牌。人物比例协调，"
     "视线自然，双手与桌面关系合理，画面为正方形播客视频封面构图。不要增加"
-    "第三个人物，不要改变人物性别，不要添加水印或额外文字。"
+    "第三个角色，不要改变角色物种，不要添加水印或额外文字。"
 )
 
 

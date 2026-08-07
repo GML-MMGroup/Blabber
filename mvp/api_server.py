@@ -232,22 +232,12 @@ JOBS: dict[str, dict] = {}
 JOBS_LOCK = threading.Lock()
 VIDEO_RENDER_LOCK = threading.Lock()
 
-ACTION_CHARACTERS = {"male", "female", "dog", "duck"}
+ACTION_CHARACTERS = {"dog", "duck"}
 ACTION_CHARACTER_SPEAKER_IDS = {
-    "male": "zh_male_dayixiansheng_v2_saturn_bigtts",
     "dog": "zh_male_dayixiansheng_v2_saturn_bigtts",
-    "female": "zh_female_mizaitongxue_v2_saturn_bigtts",
     "duck": "zh_female_mizaitongxue_v2_saturn_bigtts",
 }
 ACTION_CHARACTER_VOICE_PROMPTS = {
-    "male": (
-        "青年男性，普通话标准，声音清朗温暖，带自然笑意和少年感；"
-        "性格阳光外向、亲切有活力，语速稍快但吐字清楚，像朋友聊天般轻松。"
-    ),
-    "female": (
-        "青年女性，普通话标准，声音温暖明亮、柔和甜润但不过分稚嫩；"
-        "性格亲切活泼，带自然笑意，节奏轻快，像充满好奇心的年轻播客主持人。"
-    ),
     "dog": (
         "青年男性卡通角色，普通话标准，声音阳光清朗、热情有活力；"
         "语气忠诚友善又略带顽皮，节奏轻快，像幽默亲切的年轻播客主持人。"
@@ -258,55 +248,10 @@ ACTION_CHARACTER_VOICE_PROMPTS = {
     ),
 }
 ACTION_SCENES = {
-    "studio": {
-        "background": PROJECT_ROOT / "assets" / "background" / "scene2-background-mics-out-100px-1920x1080.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "scene2-foreground-mics-out-100px-alpha-1920x1080_副本.png",
-        "foreground_key_color": None,
-    },
-    "studio-clean": {
-        "background": PROJECT_ROOT / "assets" / "background" / "scene2-background-mics-out-100px-1920x1080.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "scene2-foreground-mics-out-100px-alpha-1920x1080_副本.png",
-        "foreground_key_color": None,
-    },
     "zoo": {
         "background": PROJECT_ROOT / "assets" / "background" / "zoo_background.png",
         "foreground": PROJECT_ROOT / "assets" / "background" / "zoo_foreground.png",
         "foreground_key_color": "0xFF00FF",
-    },
-    "library": {
-        "background": PROJECT_ROOT / "assets" / "background" / "library_background.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "library_foreground.png",
-        "foreground_key_color": None,
-    },
-    "seaside": {
-        "background": PROJECT_ROOT / "assets" / "background" / "seaside_background.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "seaside_foreground.png",
-        "foreground_key_color": "0xFF00FF",
-    },
-    "space": {
-        "background": PROJECT_ROOT / "assets" / "background" / "space_background.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "space_foreground.png",
-        "foreground_key_color": None,
-    },
-    "ink-tea": {
-        "background": PROJECT_ROOT / "assets" / "background" / "ink_tea_background.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "ink_tea_foreground.png",
-        "foreground_key_color": None,
-    },
-    "anime-neon": {
-        "background": PROJECT_ROOT / "assets" / "background" / "scene_anime_neon_background.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "scene_anime_neon_foreground.png",
-        "foreground_key_color": None,
-    },
-    "flat-tech": {
-        "background": PROJECT_ROOT / "assets" / "background" / "scene_flat_tech_background.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "scene_flat_tech_foreground.png",
-        "foreground_key_color": None,
-    },
-    "lowpoly": {
-        "background": PROJECT_ROOT / "assets" / "background" / "scene_lowpoly_background.png",
-        "foreground": PROJECT_ROOT / "assets" / "background" / "scene_lowpoly_foreground.png",
-        "foreground_key_color": None,
     },
 }
 
@@ -320,12 +265,12 @@ def _clamp_number(value, minimum: float, maximum: float, fallback: float) -> flo
 
 def _normalize_creative_config(raw_config) -> dict:
     raw = raw_config if isinstance(raw_config, dict) else {}
-    background = str(raw.get("background", "studio"))
+    background = str(raw.get("background", "zoo"))
     if background not in ACTION_SCENES:
-        background = "studio"
+        background = "zoo"
 
     raw_characters = raw.get("characters")
-    characters = ["male", "female"]
+    characters = ["duck", "dog"]
     if isinstance(raw_characters, list):
         chosen = [str(item) for item in raw_characters[:2]]
         if len(chosen) == 2 and all(item in ACTION_CHARACTERS for item in chosen):

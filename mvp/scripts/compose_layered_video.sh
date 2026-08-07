@@ -4,11 +4,11 @@
 #
 #   背景图片
 #      ↓
-#   男角色 ProRes 4444 Alpha 动画
+#   嘎嘎 Alpha 动画（ProRes MOV 或 VP9 WebM）
 #      ↓
-#   女角色 ProRes 4444 Alpha 动画
+#   阿汪 Alpha 动画（ProRes MOV 或 VP9 WebM）
 #      ↓
-#   桌面、麦克风和盆栽透明前景
+#   动物园播客间前景
 #
 # 默认输出：
 #   mvp/output/ffmpeg-layered/cartoon-podcast-new-foreground.mp4
@@ -19,8 +19,8 @@
 # 也可以依次传入 5 个自定义路径：
 #   ./mvp/scripts/compose_layered_video.sh \
 #     background.png \
-#     male.mov \
-#     female.mov \
+#     duck.mov-or.webm \
+#     dog.mov-or.webm \
 #     foreground.png \
 #     output.mp4
 
@@ -29,12 +29,37 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# 输入素材。命令行参数为空时使用项目中的默认素材。
-BACKGROUND="${1:-${PROJECT_ROOT}/assets/background/background.png}"
-MALE_ACTION="${2:-${PROJECT_ROOT}/assets/action/cartoon-dialogue-male-alpha-prores4444.mov}"
-FEMALE_ACTION="${3:-${PROJECT_ROOT}/assets/action/cartoon-dialogue-female-alpha-prores4444.mov}"
-FOREGROUND="${4:-${PROJECT_ROOT}/assets/background/scene2-foreground-alpha-clean-1920x1080_副本.png}"
+# 输入素材。默认优先使用本地 ProRes，GitHub clone 中自动使用 VP9。
+BACKGROUND="${1:-${PROJECT_ROOT}/assets/background/zoo_background.png}"
+DEFAULT_DUCK_MOV="${PROJECT_ROOT}/assets/action/duck/duck-dialogue-5s-alpha-prores4444.mov"
+DEFAULT_DUCK_WEBM="${PROJECT_ROOT}/assets/action/duck/duck-dialogue-5s-alpha-vp9.webm"
+DEFAULT_DOG_MOV="${PROJECT_ROOT}/assets/action/dog/dog-dialogue-4s-alpha-prores4444.mov"
+DEFAULT_DOG_WEBM="${PROJECT_ROOT}/assets/action/dog/dog-dialogue-4s-alpha-vp9.webm"
+
+if [[ -f "${DEFAULT_DUCK_MOV}" ]]; then
+  DEFAULT_DUCK_ACTION="${DEFAULT_DUCK_MOV}"
+else
+  DEFAULT_DUCK_ACTION="${DEFAULT_DUCK_WEBM}"
+fi
+if [[ -f "${DEFAULT_DOG_MOV}" ]]; then
+  DEFAULT_DOG_ACTION="${DEFAULT_DOG_MOV}"
+else
+  DEFAULT_DOG_ACTION="${DEFAULT_DOG_WEBM}"
+fi
+
+DUCK_ACTION="${2:-${DEFAULT_DUCK_ACTION}}"
+DOG_ACTION="${3:-${DEFAULT_DOG_ACTION}}"
+FOREGROUND="${4:-${PROJECT_ROOT}/assets/background/zoo_foreground.png}"
 OUTPUT="${5:-${PROJECT_ROOT}/mvp/output/ffmpeg-layered/cartoon-podcast-new-foreground.mp4}"
+
+DUCK_DECODER_ARGS=()
+DOG_DECODER_ARGS=()
+case "${DUCK_ACTION}" in
+  *.webm|*.WEBM) DUCK_DECODER_ARGS=(-c:v libvpx-vp9) ;;
+esac
+case "${DOG_ACTION}" in
+  *.webm|*.WEBM) DOG_DECODER_ARGS=(-c:v libvpx-vp9) ;;
+esac
 
 # 最终画布和时间参数。
 CANVAS_WIDTH=1920
@@ -42,14 +67,14 @@ CANVAS_HEIGHT=1080
 FPS=24
 
 # 两个人物素材使用相同尺寸，确保视角和比例一致。
-ACTOR_SIZE_MALE=735
-ACTOR_SIZE_FEMALE=675
+ACTOR_SIZE_DUCK=735
+ACTOR_SIZE_DOG=675
 
 # overlay 坐标是缩放后人物方形画布左上角的位置。
-MALE_X=184
-MALE_Y=195
-FEMALE_X=900
-FEMALE_Y=195
+DUCK_X=184
+DUCK_Y=195
+DOG_X=900
+DOG_Y=195
 
 # 两条动作素材各有 121 帧；121 ÷ 24 ≈ 5.04 秒。
 OUTPUT_FRAMES=121
@@ -66,8 +91,8 @@ fi
 # 在开始编码前检查所有输入，避免 FFmpeg 运行后才发现路径错误。
 for input_path in \
   "${BACKGROUND}" \
-  "${MALE_ACTION}" \
-  "${FEMALE_ACTION}" \
+  "${DUCK_ACTION}" \
+  "${DOG_ACTION}" \
   "${FOREGROUND}"
 do
   if [[ ! -f "${input_path}" ]]; then
@@ -80,8 +105,8 @@ mkdir -p "$(dirname "${OUTPUT}")"
 
 echo "开始合成："
 echo "  背景：${BACKGROUND}"
-echo "  男角色：${MALE_ACTION}"
-echo "  女角色：${FEMALE_ACTION}"
+echo "  嘎嘎：${DUCK_ACTION}"
+echo "  阿汪：${DOG_ACTION}"
 echo "  前景：${FOREGROUND}"
 echo "  输出：${OUTPUT}"
 
@@ -94,9 +119,11 @@ ffmpeg_args=(
   -framerate "${FPS}"
   -i "${BACKGROUND}"
 
-  # 两条 MOV 已包含 ProRes 4444 Alpha，FFmpeg 会自动识别透明通道。
-  -i "${MALE_ACTION}"
-  -i "${FEMALE_ACTION}"
+  # WebM 需显式使用 libvpx-vp9，才能将 Alpha 平面交给滤镜链。
+  "${DUCK_DECODER_ARGS[@]}"
+  -i "${DUCK_ACTION}"
+  "${DOG_DECODER_ARGS[@]}"
+  -i "${DOG_ACTION}"
 
   # 透明前景同样循环，持续覆盖完整视频时长。
   -loop 1
@@ -110,26 +137,27 @@ ffmpeg_args=(
     [background];
 
     [1:v]
-      scale=${ACTOR_SIZE_MALE}:${ACTOR_SIZE_MALE},
+      scale=${ACTOR_SIZE_DUCK}:${ACTOR_SIZE_DUCK},
       format=rgba
-    [male];
+    [duck];
 
     [2:v]
-      scale=${ACTOR_SIZE_FEMALE}:${ACTOR_SIZE_FEMALE},
+      scale=${ACTOR_SIZE_DOG}:${ACTOR_SIZE_DOG},
       format=rgba
-    [female];
+    [dog];
 
     [3:v]
       scale=${CANVAS_WIDTH}:${CANVAS_HEIGHT},
-      format=rgba
+      format=rgba,
+      colorkey=0xFF00FF:0.18:0.08
     [foreground];
 
-    [background][male]
-      overlay=x=${MALE_X}:y=${MALE_Y}:format=auto
-    [with_male];
+    [background][duck]
+      overlay=x=${DUCK_X}:y=${DUCK_Y}:format=auto
+    [with_duck];
 
-    [with_male][female]
-      overlay=x=${FEMALE_X}:y=${FEMALE_Y}:format=auto
+    [with_duck][dog]
+      overlay=x=${DOG_X}:y=${DOG_Y}:format=auto
     [with_actors];
 
     [with_actors][foreground]

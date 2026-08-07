@@ -28,14 +28,11 @@ test("server-renders the Blabber landing page", async () => {
   assert.match(html, /生成脚本和音频/);
   assert.match(html, /播客生成状态/);
   assert.match(html, /最多选择两位；再次点击取消。第一位在左，第二位在右/);
-  assert.match(html, /复古图书馆/);
-  assert.match(html, /海滨电台/);
-  assert.match(html, /星际直播舱/);
-  assert.match(html, /水墨茶室/);
-  assert.match(html, /阳光男生/);
-  assert.match(html, /活力女生/);
   assert.match(html, /阿汪/);
   assert.match(html, /嘎嘎/);
+  assert.match(html, /动物园直播间/);
+  assert.doesNotMatch(html, /深夜播客间|复古图书馆|海滨电台|星际直播舱|水墨茶室|霓虹动漫台|扁平科技台|低多边形演播室/);
+  assert.doesNotMatch(html, /阳光男生|活力女生/);
   assert.doesNotMatch(html, /3D Milo|3D Luna|黏土小熊猫|黏土小水獭|动漫男生|动漫女生|科技男生|科技女生|低多边形男生|低多边形女生/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/);
 });
@@ -47,12 +44,8 @@ test("ships product metadata and project assets", async () => {
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     access(new URL("../public/blabber-banner.png", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
-    access(new URL("../public/scene-library-composite.jpg", import.meta.url)),
-    access(new URL("../public/scene-seaside-composite.jpg", import.meta.url)),
-    access(new URL("../public/scene-space-composite.jpg", import.meta.url)),
-    access(new URL("../public/scene-ink-tea-composite.jpg", import.meta.url)),
-    access(new URL("../public/action-preview-male.png", import.meta.url)),
-    access(new URL("../public/action-preview-female.png", import.meta.url)),
+    access(new URL("../public/scene-zoo.png", import.meta.url)),
+    access(new URL("../public/scene-zoo-foreground.png", import.meta.url)),
     access(new URL("../public/action-preview-dog.png", import.meta.url)),
     access(new URL("../public/action-preview-duck.png", import.meta.url)),
   ]);
@@ -61,7 +54,7 @@ test("ships product metadata and project assets", async () => {
   assert.match(layout, /twitter/);
   assert.match(layout, /og-studio\.png/);
   assert.match(page, /thumbnail \?\? item\.image/);
-  assert.match(page, /scene-library-foreground\.png/);
+  assert.match(page, /scene-zoo-foreground\.png/);
   assert.match(page, /src=\{character\.actionPreview\}/);
   assert.match(page, /if \(current\.includes\(id\)\) return current\.filter/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);

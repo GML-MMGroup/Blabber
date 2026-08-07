@@ -25,13 +25,13 @@ DEFAULT_BACKGROUND = (
     PROJECT_ROOT
     / "assets"
     / "background"
-    / "scene2-background-mics-out-100px-1920x1080.png"
+    / "zoo_background.png"
 )
 DEFAULT_FOREGROUND = (
     PROJECT_ROOT
     / "assets"
     / "background"
-    / "scene2-foreground-mics-out-100px-alpha-1920x1080_副本.png"
+    / "zoo_foreground.png"
 )
 TURN_RE = re.compile(r"^(\d+)_(HostA|HostB)\.mp3$")
 
@@ -143,16 +143,31 @@ def _pick_action_asset(
     action: str,
 ) -> Path:
     action_dir = action_root / character
-    candidates = sorted(
-        action_dir.glob(f"{character}-{action}-*-alpha-prores4444.mov"),
-        key=_probe_duration,
-        reverse=True,
+    # Keep the lossless local masters as the first choice.  The lightweight
+    # VP9 files are published with the repository and act as a transparent
+    # fallback when a clone does not contain the ProRes masters.
+    patterns = (
+        f"{character}-{action}-*-alpha-prores4444.mov",
+        f"{character}-{action}-*-alpha-vp9.webm",
     )
-    if not candidates:
-        raise FileNotFoundError(
-            f"没有找到 {character} 的 {action} Alpha 元视频：{action_dir}"
+    for pattern in patterns:
+        candidates = sorted(
+            action_dir.glob(pattern),
+            key=_probe_duration,
+            reverse=True,
         )
-    return candidates[0]
+        if candidates:
+            return candidates[0]
+    raise FileNotFoundError(
+        f"没有找到 {character} 的 {action} Alpha MOV/WebM：{action_dir}"
+    )
+
+
+def _alpha_decoder_args(path: Path) -> list[str]:
+    """Force the libvpx decoder so FFmpeg exposes WebM's alpha plane."""
+    if path.suffix.lower() == ".webm":
+        return ["-c:v", "libvpx-vp9"]
+    return []
 
 
 def _build_filter(
@@ -350,6 +365,7 @@ def _prepare_pingpong_asset(
     print(f"[动作视频] 准备正放+倒放素材：{asset.path.name}", flush=True)
     _run([
         "ffmpeg", "-y", "-filter_threads", "1",
+        *_alpha_decoder_args(asset.path),
         "-i", str(asset.path),
         "-filter_complex",
         f"[0:v]fps={fps},setpts=PTS-STARTPTS,split=2[forward][reverse_input];"
@@ -726,17 +742,17 @@ def main() -> None:
         dest="action_root",
         type=Path,
         default=DEFAULT_ACTION_ROOT,
-        help="包含各角色子目录及 Alpha 元视频的动作素材根目录",
+        help="包含各角色子目录及 Alpha MOV/WebM 的动作素材根目录",
     )
     parser.add_argument(
         "--host-a-character",
-        default="male",
-        help="HostA 的角色目录和素材文件名前缀，默认 male",
+        default="duck",
+        help="HostA 的角色目录和素材文件名前缀，默认 duck",
     )
     parser.add_argument(
         "--host-b-character",
-        default="female",
-        help="HostB 的角色目录和素材文件名前缀，默认 female",
+        default="dog",
+        help="HostB 的角色目录和素材文件名前缀，默认 dog",
     )
     parser.add_argument("--background", type=Path, default=DEFAULT_BACKGROUND)
     parser.add_argument("--foreground", type=Path, default=DEFAULT_FOREGROUND)
