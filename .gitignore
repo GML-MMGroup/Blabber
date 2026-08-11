@@ -45,6 +45,8 @@ __pycache__/
 !/assets/action/flat-tech-host-male/
 !/assets/action/lowpoly-host-female/
 !/assets/action/lowpoly-host-male/
+!/assets/action/toon3d-luna/
+!/assets/action/toon3d-milo/
 
 # Keep ProRes masters and work files local; publish lightweight VP9 Alpha.
 /assets/action/dog/*
@@ -69,6 +71,10 @@ __pycache__/
 !/assets/action/lowpoly-host-female/*-alpha-vp9.webm
 /assets/action/lowpoly-host-male/*
 !/assets/action/lowpoly-host-male/*-alpha-vp9.webm
+/assets/action/toon3d-luna/*
+!/assets/action/toon3d-luna/*-alpha-vp9.webm
+/assets/action/toon3d-milo/*
+!/assets/action/toon3d-milo/*-alpha-vp9.webm
 
 # Demo source videos stay local; the published runtime does not require them.
 /assets/demo/*.mp4
@@ -92,6 +98,8 @@ __pycache__/
 /site/public/profes-*.png
 /site/public/retro-*.png
 /site/public/toon3d-*.png
+!/site/public/toon3d-luna.png
+!/site/public/toon3d-milo.png
 
 # Unused alternate cutouts stay local; action previews are generated from video.
 /site/public/funny-podcast-dog-alpha-v2.png

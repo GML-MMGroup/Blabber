@@ -98,7 +98,7 @@ Every syllable drives the character's mouth shapes. Change a line of dialogue, a
 Blabber cuts like a real show director: wide shots to establish, close-ups on the speaker, reaction shots on the listener, with cut timing driven by the rhythm of the conversation.
 
 ### 7. 🗂️ Bundled Release Library
-- **10 video characters** — Gaga, Awang, Cartoon, Anime, Flat Tech, and Low Poly hosts
+- **12 video characters** — Gaga, Awang, Cartoon, Luna, Milo, Anime, Flat Tech, and Low Poly hosts
 - **9 scenes** — zoo, studio, library, seaside, space, tea room, anime neon, flat tech, and low poly
 - **Character-matched voices** — a dedicated PodcastTTS voice prompt for each character
 
