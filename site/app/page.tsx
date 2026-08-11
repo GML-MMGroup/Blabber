@@ -181,6 +181,10 @@ function nextCharacterSelection(current: string[], id: string): string[] {
   return [current[0], id];
 }
 
+function sameStringList(left: string[] | undefined, right: string[]): boolean {
+  return Boolean(left && left.length === right.length && left.every((item, index) => item === right[index]));
+}
+
 export default function Home() {
   const [prompt, setPrompt] = useState(defaultPrompt);
   const [episode, setEpisode] = useState<Episode>({ topic: "", turns: [] });
@@ -223,13 +227,21 @@ export default function Home() {
 
   const background = backgrounds.find((item) => item.id === backgroundId) ?? backgrounds[0];
   const selected = selectedCharacters.map((id) => characters.find((item) => item.id === id)).filter(Boolean) as Character[];
+  const selectedActionIds = selected.slice(0, 2).map((character) => character.actionId);
+  const effectiveVoiceIds = selected.slice(0, 2).map((character, index) =>
+    selectedVoiceIds[index] || voices.find((voice) => voice.actionId === character.actionId)?.id || voices[0].id
+  );
+  const audioConfigDirty = Boolean(job?.audio_url) && (
+    !sameStringList(job?.creative_config?.characters, selectedActionIds)
+    || !sameStringList(job?.creative_config?.voices, effectiveVoiceIds)
+  );
   const selectedSubtitleFont = subtitleFonts.find((item) => item.id === subtitleFontId) ?? subtitleFonts[0];
   const subtitleFontReady = Boolean(selectedSubtitleFont?.installed);
   const videoChangesPending = scriptDirty || subtitleDirty;
   const rawSubtitlePreviewText = episode.turns.find((turn) => turn.text.trim())?.text.trim() || prompt.trim() || "欢迎来到 Blabber 动画播客";
   const subtitlePreviewText = rawSubtitlePreviewText.length > 22 ? `${rawSubtitlePreviewText.slice(0, 22)}…` : rawSubtitlePreviewText;
   const busy = Boolean(job && !["complete", "failed"].includes(job.status));
-  const audioReady = Boolean(job?.audio_url);
+  const audioReady = Boolean(job?.audio_url) && !audioConfigDirty;
   const scriptAvailable = episode.turns.length > 0;
   const scriptActive = Boolean(job && job.stage.startsWith("script_") && !["complete", "failed"].includes(job.status));
   const scriptReady = scriptAvailable && !scriptActive;
@@ -537,7 +549,7 @@ export default function Home() {
     const defaultVoices = selected.slice(0, 2).map((character) =>
       voices.find((voice) => voice.actionId === character.actionId) ?? voices[0]
     );
-    const chosenVoiceIds = defaultVoices.map((voice, index) => selectedVoiceIds[index] || voice.id);
+    const chosenVoiceIds = effectiveVoiceIds;
     if (defaultVoices.length < 2) {
       setError("请先选择两位角色");
       return;
@@ -598,7 +610,7 @@ export default function Home() {
     const defaultVoices = selected.slice(0, 2).map((character) =>
       voices.find((voice) => voice.actionId === character.actionId) ?? voices[0]
     );
-    const chosenVoiceIds = defaultVoices.map((voice, index) => selectedVoiceIds[index] || voice.id);
+    const chosenVoiceIds = effectiveVoiceIds;
     try {
       const response = await fetch("/api/mvp/jobs", {
         method: "POST",
@@ -651,6 +663,7 @@ export default function Home() {
             background: background.id,
             characters: selected.map((item) => item.actionId),
             placements,
+            voices: effectiveVoiceIds,
             subtitles: { font: subtitleFontId, size: subtitleSize },
           },
         }),

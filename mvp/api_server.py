@@ -1897,6 +1897,15 @@ class Handler(BaseHTTPRequestHandler):
             previous_creative_config = _normalize_creative_config(
                 job.get("creative_config")
             )
+            audio_config_keys = ("characters", "voices")
+            if any(
+                creative_config[key] != previous_creative_config[key]
+                for key in audio_config_keys
+            ):
+                self._json(409, {
+                    "error": "角色或音色已改变，请先重新生成音频",
+                })
+                return
             video_config_keys = ("background", "characters", "placements", "subtitles")
             creative_changed = any(
                 creative_config[key] != previous_creative_config[key]
