@@ -191,6 +191,9 @@ export default function Home() {
   const [backgroundId, setBackgroundId] = useState("zoo");
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>(["duck", "dog"]);
   const [selectedVoiceIds, setSelectedVoiceIds] = useState<string[]>(["zh_female_qiaopinv_uranus_bigtts", "zh_male_wennuanahu_uranus_bigtts"]);
+  const [previewBusyVoice, setPreviewBusyVoice] = useState("");
+  const [previewPlayingVoice, setPreviewPlayingVoice] = useState("");
+  const voicePreviewAudio = useRef<HTMLAudioElement | null>(null);
   const [placements, setPlacements] = useState<Placement[]>(defaultPlacements);
   const [configOpen, setConfigOpen] = useState(false);
   const [config, setConfig] = useState<ConfigResponse | null>(null);
@@ -482,6 +485,48 @@ export default function Home() {
     }
   }
 
+  async function toggleVoicePreview(voiceId: string) {
+    const active = voicePreviewAudio.current;
+    if (active && previewPlayingVoice === voiceId && !active.paused) {
+      active.pause();
+      active.currentTime = 0;
+      setPreviewPlayingVoice("");
+      return;
+    }
+    if (active) {
+      active.pause();
+      voicePreviewAudio.current = null;
+    }
+    setPreviewPlayingVoice("");
+    setPreviewBusyVoice(voiceId);
+    setError("");
+    try {
+      const response = await fetch("/api/mvp/voice-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voice_id: voiceId }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.audio_url) throw new Error(payload.error || "音色试听生成失败");
+      const audio = new Audio(payload.audio_url);
+      voicePreviewAudio.current = audio;
+      audio.onended = () => {
+        if (voicePreviewAudio.current === audio) voicePreviewAudio.current = null;
+        setPreviewPlayingVoice("");
+      };
+      audio.onerror = () => {
+        if (voicePreviewAudio.current === audio) voicePreviewAudio.current = null;
+        setPreviewPlayingVoice("");
+        setError("音色试听播放失败");
+      };
+      await audio.play();
+      setPreviewPlayingVoice(voiceId);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "音色试听生成失败");
+    } finally {
+      setPreviewBusyVoice("");
+    }
+  }
   async function generateAudio() {
     if (!sourceFile && !prompt.trim()) return;
     setError("");
@@ -959,7 +1004,7 @@ export default function Home() {
                 const voice = voiceOptions.find((item) => item.id === selectedVoiceIds[hostIndex]) ?? defaultVoice;
                 return <div className="voice-select" key={hostIndex}>
                   <label>{hostIndex === 0 ? "Host A · 左侧" : "Host B · 右侧"}</label>
-                  <div>{voice && <><select value={voice.id} onChange={(event) => setSelectedVoiceIds((current) => current.map((id, index) => index === hostIndex ? event.target.value : id))} aria-label={`${hostIndex === 0 ? "Host A" : "Host B"} 音色`}><option value={defaultVoice?.id}>{defaultVoice?.name}（角色默认）</option>{voiceOptions.filter((option) => option.id !== defaultVoice?.id).map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select><small className="voice-detail">{voice.note}<code>{voice.id}</code></small></>}</div>
+                  <div>{voice && <><div className="voice-control"><select value={voice.id} onChange={(event) => setSelectedVoiceIds((current) => current.map((id, index) => index === hostIndex ? event.target.value : id))} aria-label={`${hostIndex === 0 ? "Host A" : "Host B"} 音色`}><option value={defaultVoice?.id}>{defaultVoice?.name}（角色默认）</option>{voiceOptions.filter((option) => option.id !== defaultVoice?.id).map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select><button className="voice-preview-button" onClick={() => void toggleVoicePreview(voice.id)} disabled={Boolean(previewBusyVoice)} aria-label={`试听${voice.name}`}>{previewBusyVoice === voice.id ? "生成中" : previewPlayingVoice === voice.id ? "停止" : "试听"}</button></div><small className="voice-detail">{voice.note}<code>{voice.id}</code></small></>}</div>
                 </div>;
               })}
             </section>

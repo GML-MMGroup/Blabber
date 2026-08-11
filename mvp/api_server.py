@@ -284,6 +284,8 @@ ACTION_CHARACTER_SPEAKER_IDS = {
     "toon3d-milo": "zh_male_shaonianzixin_uranus_bigtts",
 }
 AVAILABLE_SPEAKER_IDS = frozenset(ACTION_CHARACTER_SPEAKER_IDS.values())
+VOICE_PREVIEW_TEXT = "你好，欢迎来到 Blabber。让我们一起开始今天的播客吧。"
+VOICE_PREVIEW_LOCK = threading.Lock()
 ACTION_CHARACTERS = frozenset(ACTION_CHARACTER_SPEAKER_IDS)
 ACTION_CHARACTER_VOICE_PROMPTS = {
     "dog": (
@@ -513,6 +515,79 @@ def _normalize_creative_config(raw_config) -> dict:
         "subtitles": {"font": subtitle_font, "size": subtitle_size},
     }
 
+
+def _generate_voice_preview(voice_id: str) -> Path:
+    if voice_id not in AVAILABLE_SPEAKER_IDS:
+        raise ValueError("不支持的音色 ID")
+    app_id = os.getenv("VOLCENGINE_SPEECH_APP_ID", "").strip()
+    access_key = os.getenv("VOLCENGINE_SPEECH_ACCESS_KEY", "").strip()
+    if not app_id or not access_key:
+        raise RuntimeError("请先配置 PodcastTTS App ID 和 Access Token")
+    cache_dir = OUTPUT_ROOT / "voice-previews"
+    cache_key = hashlib.sha256(
+        f"seed-tts-2.0\0{voice_id}\0{VOICE_PREVIEW_TEXT}".encode("utf-8")
+    ).hexdigest()[:20]
+    output = cache_dir / f"{cache_key}.mp3"
+    with VOICE_PREVIEW_LOCK:
+        if output.is_file() and output.stat().st_size > 0:
+            return output
+        payload = json.dumps({
+            "user": {"uid": "blabber_voice_preview"},
+            "req_params": {
+                "text": VOICE_PREVIEW_TEXT,
+                "speaker": voice_id,
+                "audio_params": {"format": "mp3", "sample_rate": 24000},
+            },
+        }, ensure_ascii=False).encode("utf-8")
+        request = Request(
+            "https://openspeech.bytedance.com/api/v3/tts/unidirectional",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "X-Api-App-Id": app_id,
+                "X-Api-Access-Key": access_key,
+                "X-Api-Resource-Id": "seed-tts-2.0",
+                "X-Api-Request-Id": str(uuid.uuid4()),
+            },
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=60) as response:
+                response_body = response.read().decode("utf-8-sig", errors="replace")
+        except HTTPError as error:
+            detail = error.read().decode("utf-8", errors="replace")[:500]
+            raise RuntimeError(f"音色试听服务 HTTP {error.code}: {detail}") from error
+        except (URLError, TimeoutError) as error:
+            raise RuntimeError(f"音色试听服务连接失败：{error}") from error
+        audio = bytearray()
+        for raw_line in response_body.splitlines():
+            line = raw_line.strip()
+            if line.lower().startswith("data:"):
+                line = line[5:].strip()
+            if not line or line == "[DONE]":
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError as error:
+                raise RuntimeError("音色试听服务返回了无效数据") from error
+            code = int(float(event.get("code", 0)))
+            if code == 20000000:
+                break
+            if code != 0:
+                raise RuntimeError(f"音色试听服务错误 {code}: {line[:300]}")
+            chunk = event.get("data")
+            if isinstance(chunk, str) and chunk.strip():
+                try:
+                    audio.extend(base64.b64decode(chunk.strip()))
+                except (ValueError, binascii.Error) as error:
+                    raise RuntimeError("音色试听服务返回了无效音频") from error
+        if not audio:
+            raise RuntimeError("音色试听服务未返回音频")
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        temporary = output.with_suffix(".tmp")
+        temporary.write_bytes(audio)
+        temporary.replace(output)
+    return output
 
 def _speaker_ids_for_config(creative_config: dict) -> list[str]:
     config = _normalize_creative_config(creative_config)
@@ -1394,7 +1469,7 @@ class Handler(BaseHTTPRequestHandler):
             notebook_url = os.getenv("OPEN_NOTEBOOK_URL", "").strip()
             self._json(200, {
                 "ok": True,
-                "features": ["script", "podcast-document", "tts", "image-voice", "audio", "character-track", "fast-video", "action-video", "subtitle-preview", "font-download", "video-generate", "video-trim", "video-concat", "video-demo"],
+                "features": ["script", "podcast-document", "tts", "image-voice", "audio", "character-track", "fast-video", "action-video", "subtitle-preview", "font-download", "voice-preview", "video-generate", "video-trim", "video-concat", "video-demo"],
                 "script_generator": "open-notebook" if notebook_url else "mock",
                 "open_notebook_configured": bool(notebook_url),
                 "tts_engine": (
@@ -1559,6 +1634,22 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, payload)
             return
 
+        if path == "/api/mvp/voice-preview":
+            voice_id = str(body.get("voice_id", "")).strip()
+            try:
+                preview_path = _generate_voice_preview(voice_id)
+            except ValueError as error:
+                self._json(400, {"error": str(error)})
+                return
+            except (OSError, RuntimeError) as error:
+                self._json(502, {"error": str(error)})
+                return
+            self._json(200, {
+                "voice_id": voice_id,
+                "text": VOICE_PREVIEW_TEXT,
+                "audio_url": _media_url(preview_path),
+            })
+            return
         if path == "/api/mvp/config":
             raw_values = body.get("values")
             raw_clear = body.get("clear", [])
