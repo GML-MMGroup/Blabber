@@ -18,6 +18,7 @@ from add_action_subtitles import (
     write_srt,
 )
 from blabber.compose import PAUSE_MS, load_dialogue_clip
+from blabber.media_tools import ffmpeg_binary, ffprobe_binary
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -61,7 +62,7 @@ class ActionAsset:
 def _probe_duration(path: Path) -> float:
     result = subprocess.run(
         [
-            "ffprobe",
+            ffprobe_binary(),
             "-v",
             "error",
             "-show_entries",
@@ -372,7 +373,7 @@ def _prepare_pingpong_asset(
     temporary = output.with_name(f"{output.stem}.rendering.mov")
     print(f"[动作视频] 准备正放+倒放素材：{asset.path.name}", flush=True)
     _run([
-        "ffmpeg", "-y", "-filter_threads", "1",
+        ffmpeg_binary(), "-y", "-filter_threads", "1",
         *_alpha_decoder_args(asset.path),
         "-i", str(asset.path),
         "-filter_complex",
@@ -483,7 +484,7 @@ def _render_low_memory_video(
             "overlay=x=0:y=0:format=auto,format=yuv420p[video]",
         ])
         command = [
-            "ffmpeg", "-y", "-filter_threads", "1",
+            ffmpeg_binary(), "-y", "-filter_threads", "1",
             "-filter_complex_threads", "1",
             "-loop", "1", "-framerate", str(args.fps),
             "-i", str(inputs["background"]),
@@ -546,12 +547,12 @@ def _render_low_memory_video(
     )
     scene_path = work_dir / "scene.mp4"
     _run([
-        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        ffmpeg_binary(), "-y", "-f", "concat", "-safe", "0",
         "-i", str(concat_list), "-c", "copy", str(scene_path),
     ])
 
     command = [
-        "ffmpeg", "-y", "-filter_threads", "1",
+        ffmpeg_binary(), "-y", "-filter_threads", "1",
         "-filter_complex_threads", "1", "-i", str(scene_path),
         "-i", str(inputs["audio"]),
     ]

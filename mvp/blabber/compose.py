@@ -3,6 +3,11 @@ from pathlib import Path
 from pydub import AudioSegment
 from pydub.silence import detect_nonsilent
 
+from .media_tools import ensure_media_tools_on_path, ffmpeg_binary
+
+ensure_media_tools_on_path()
+AudioSegment.converter = ffmpeg_binary()
+
 PAUSE_MS = 180
 SILENCE_GUARD_MS = 70
 

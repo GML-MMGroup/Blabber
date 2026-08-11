@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import threading
+import traceback
 import time
 import uuid
 import zipfile
@@ -1451,6 +1452,7 @@ def _generate_video(
     except Exception as error:
         _update_job(job_id, status="failed", stage="video_failed", error=str(error))
         print(f"[视频任务 {job_id}] 失败: {error}", flush=True)
+        traceback.print_exc()
 
 
 def _generate_character_track(job_id: str, run_dir: Path, character_set: str) -> None:

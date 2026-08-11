@@ -9,6 +9,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from blabber.media_tools import ffmpeg_binary
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_RUN_DIR = PROJECT_ROOT / "mvp" / "output" / "20260728-170344"
@@ -217,7 +219,7 @@ def _burn_subtitles(
 ) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     command = [
-        "ffmpeg",
+        ffmpeg_binary(),
         "-hide_banner",
         "-y",
         "-i",
