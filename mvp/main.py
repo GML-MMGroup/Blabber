@@ -18,7 +18,7 @@ from blabber.script_generator import (
     is_chinese,
 )
 from blabber.schema import Episode
-from blabber.tts_engine import ByteDanceSeedAudioTTSEngine, EdgeTTSEngine
+from blabber.tts_engine import ByteDanceSeedAudioTTSEngine
 from blabber.voices import DEFAULT_CHARACTER_SET, voice_for
 
 OUTPUT_ROOT = Path(__file__).parent / "output"
@@ -140,13 +140,14 @@ async def run(
     })
 
     byte_tts_key = os.getenv("BYTEDANCE_TTS_API_KEY", "").strip()
-    tts = (
-        ByteDanceSeedAudioTTSEngine(
-            byte_tts_key,
-            timeout=float(os.getenv("BYTEDANCE_TTS_TIMEOUT", "300")),
+    if not byte_tts_key:
+        raise RuntimeError(
+            "豆包 PodcastTTS 未配置，且 BYTEDANCE_TTS_API_KEY 未配置；"
+            "项目不使用 Edge TTS，请配置至少一个字节系语音服务。"
         )
-        if byte_tts_key
-        else EdgeTTSEngine()
+    tts = ByteDanceSeedAudioTTSEngine(
+        byte_tts_key,
+        timeout=float(os.getenv("BYTEDANCE_TTS_TIMEOUT", "300")),
     )
     clip_paths = []
     skipped = []

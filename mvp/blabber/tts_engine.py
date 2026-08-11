@@ -8,43 +8,10 @@ import urllib.request
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-import edge_tts
-
-RETRY_ATTEMPTS = 5
-RETRY_BASE_DELAY_SECONDS = 2.0
-RETRY_MAX_DELAY_SECONDS = 20.0
-
-
 class TTSEngine(ABC):
     @abstractmethod
     async def synthesize(self, text: str, voice: str, out_path: Path) -> Path:
         ...
-
-
-class EdgeTTSEngine(TTSEngine):
-    """Free, no-API-key TTS backed by Microsoft Edge's online voices.
-    Same interface as a future paid engine (e.g. ElevenLabsEngine), so
-    callers don't change when we swap providers later."""
-
-    async def synthesize(self, text: str, voice: str, out_path: Path) -> Path:
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # The Edge TTS websocket occasionally drops mid-stream, more often
-        # under the rapid back-to-back requests a long episode needs, so we
-        # retry with exponential backoff to ride out transient throttling.
-        last_error: Exception | None = None
-        for attempt in range(RETRY_ATTEMPTS):
-            try:
-                communicate = edge_tts.Communicate(text, voice)
-                await communicate.save(str(out_path))
-                return out_path
-            except edge_tts.exceptions.NoAudioReceived as e:
-                last_error = e
-                if attempt < RETRY_ATTEMPTS - 1:
-                    delay = min(RETRY_BASE_DELAY_SECONDS * (2 ** attempt), RETRY_MAX_DELAY_SECONDS)
-                    await asyncio.sleep(delay)
-
-        raise last_error
 
 
 class ByteDanceSeedAudioTTSEngine(TTSEngine):
