@@ -230,11 +230,15 @@ export default function Home() {
   const subtitlePreviewText = rawSubtitlePreviewText.length > 22 ? `${rawSubtitlePreviewText.slice(0, 22)}…` : rawSubtitlePreviewText;
   const busy = Boolean(job && !["complete", "failed"].includes(job.status));
   const audioReady = Boolean(job?.audio_url);
+  const scriptAvailable = episode.turns.length > 0;
+  const scriptActive = Boolean(job && job.stage.startsWith("script_") && !["complete", "failed"].includes(job.status));
+  const scriptReady = scriptAvailable && !scriptActive;
   const videoReady = Boolean(job?.video_url) && !scriptDirty && !subtitleDirty;
   const videoStage = Boolean(job?.stage?.startsWith("video"));
-  const audioActive = Boolean(job && !audioReady && !videoStage && !["complete", "failed"].includes(job.status));
+  const audioActive = Boolean(job && !audioReady && !scriptActive && !videoStage && !["complete", "failed"].includes(job.status));
   const videoActive = Boolean(job && videoStage && !["complete", "failed"].includes(job.status));
   const videoWaiting = ["video_queued", "video_waiting", "video_prepare"].includes(job?.stage ?? "");
+  const scriptProgress = scriptReady ? 100 : scriptActive && job?.total ? Math.min(99, Math.round((job.completed / job.total) * 100)) : 0;
   const audioProgress = audioReady ? 100 : audioActive && job?.total ? Math.round((job.completed / job.total) * 100) : 0;
   const videoProgress = videoReady
     ? 100
@@ -527,7 +531,7 @@ export default function Home() {
       setPreviewBusyVoice("");
     }
   }
-  async function generateAudio() {
+  async function generateScript() {
     if (!sourceFile && !prompt.trim()) return;
     setError("");
     const defaultVoices = selected.slice(0, 2).map((character) =>
@@ -558,6 +562,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(documentBody ?? {
           prompt,
+          script_only: true,
           character_set: characterSet,
           custom_voices: {
             HostA: defaultVoices[0].prompt,
@@ -573,7 +578,7 @@ export default function Home() {
         }),
       });
       const next = await response.json();
-      if (!response.ok) throw new Error(next.error || "播客任务创建失败");
+      if (!response.ok) throw new Error(next.error || "脚本任务创建失败");
       setEpisode(next.episode ?? { topic: documentBody?.topic || prompt, turns: [] });
       setJob(next);
       setScriptDirty(false);
@@ -583,10 +588,48 @@ export default function Home() {
       ));
       if (next.reused) void loadHistory();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "播客任务创建失败");
+      setError(cause instanceof Error ? cause.message : "脚本任务创建失败");
     }
   }
 
+  async function generateAudio() {
+    if (!scriptReady || selected.length < 2) return;
+    setError("");
+    const defaultVoices = selected.slice(0, 2).map((character) =>
+      voices.find((voice) => voice.actionId === character.actionId) ?? voices[0]
+    );
+    const chosenVoiceIds = defaultVoices.map((voice, index) => selectedVoiceIds[index] || voice.id);
+    try {
+      const response = await fetch("/api/mvp/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: episode.topic || prompt,
+          character_set: characterSet,
+          episode,
+          custom_voices: {
+            HostA: defaultVoices[0].prompt,
+            HostB: defaultVoices[1].prompt,
+          },
+          creative_config: {
+            background: background.id,
+            characters: selected.map((item) => item.actionId),
+            placements,
+            voices: chosenVoiceIds,
+            subtitles: { font: subtitleFontId, size: subtitleSize },
+          },
+        }),
+      });
+      const next = await response.json();
+      if (!response.ok) throw new Error(next.error || "音频任务创建失败");
+      setJob(next);
+      setScriptDirty(false);
+      setSubtitleDirty(false);
+      if (next.reused) void loadHistory();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "音频任务创建失败");
+    }
+  }
   async function generateVideo() {
     if (!job?.id || !job.audio_url || selected.length < 2) return;
     if (!selectedSubtitleFont?.installed) {
@@ -808,7 +851,7 @@ export default function Home() {
                 />
                 <span>＋ 传入文件</span>
               </label>
-              <button className="generate-audio" onClick={generateAudio} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())}>{audioActive ? "生成中…" : "生成脚本和音频"}<span>↗</span></button>
+              <button className="generate-script" onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())}>{scriptActive ? "生成脚本中…" : scriptAvailable ? "重新生成脚本" : "生成脚本"}<span>↗</span></button><button className="generate-audio" onClick={generateAudio} disabled={busy || !scriptReady || selected.length < 2}>{audioActive ? "合成音频中…" : audioReady ? "重新生成音频" : "确认并生成音频"}<span>↗</span></button>
             </div>
             {sourceFile && <div className="selected-document"><b>{sourceFile.name}</b><small>{formatFileSize(sourceFile.size)}</small><button onClick={() => {
                 setSourceFile(null);
@@ -895,12 +938,16 @@ export default function Home() {
           </div>
 
           <div className="production-steps" aria-label="节目生成进度">
-            <article className={`status-only ${audioReady ? "done" : audioActive ? "active" : ""}`}>
+            <article className={`status-only ${scriptReady ? "done" : scriptActive ? "active" : ""}`}>
               <span className="production-index">1</span>
-              <div className="production-copy"><b>播客生成状态</b><small>{audioReady ? `已返回 ${job?.clips?.length ?? episode.turns.length} 个文本/音频切片` : audioActive ? `PodcastTTS 生成中 · ${audioProgress}%` : "等待从左栏开始生成"}</small><progress value={audioProgress} max={100} /></div>
+              <div className="production-copy"><b>生成并确认脚本</b><small>{scriptReady ? `脚本已就绪 · ${episode.turns.length} 轮对白，可在左侧修改` : scriptActive ? `PodcastTTS 正在生成对白 · ${scriptProgress}%` : "等待从左栏生成脚本"}</small><progress value={scriptProgress} max={100} /></div>
+            </article>
+            <article className={`status-only ${audioReady ? "done" : audioActive ? "active" : !scriptReady ? "locked" : ""}`}>
+              <span className="production-index">2</span>
+              <div className="production-copy"><b>确认并生成音频</b><small>{audioReady ? `已返回 ${job?.clips?.length ?? episode.turns.length} 个音频切片` : audioActive ? `按确认脚本合成中 · ${audioProgress}%` : scriptReady ? "确认左侧脚本和音色后生成" : "请先完成脚本"}</small><progress value={audioProgress} max={100} /></div>
             </article>
             <article className={videoReady ? "done" : videoActive ? "active" : !audioReady ? "locked" : ""}>
-              <span className="production-index">2</span>
+              <span className="production-index">3</span>
               <div className="production-copy"><b>生成视频</b><small>{subtitleDirty ? "字幕字体或字号已修改，将重新合成" : scriptDirty ? "脚本已修改，将同步更新字幕" : videoReady ? "成片已就绪" : videoWaiting ? "正在等待渲染资源" : videoActive ? `正在合成 · ${videoProgress}%` : audioReady ? "将语音、角色动作、字幕与场景合成" : "请先完成语音合成"}</small><progress value={videoProgress} max={100} /></div>
               <button
                 className={`video-generate-button ${videoWaiting || videoActive ? "is-rendering" : videoReady ? "is-complete" : ""}`}

@@ -1138,6 +1138,56 @@ def _live_progress(job_id: str, topic: str, payload: dict) -> None:
     _update_job(job_id, status="running", **changes)
 
 
+def _complete_script_job(job_id: str, result) -> None:
+    _update_job(
+        job_id,
+        status="complete",
+        stage="script_complete",
+        episode=asdict(result.episode),
+        script_url=_media_url(result.script_path),
+        run_dir=str(result.script_path.parent),
+        completed=len(result.episode.turns),
+        total=len(result.episode.turns),
+        error=None,
+    )
+
+
+def _generate_podcast_script(
+    job_id: str,
+    prompt: str,
+    target_minutes: float,
+    speaker_ids: list[str],
+) -> None:
+    def progress(payload: dict) -> None:
+        _live_progress(job_id, prompt, {**payload, "stage": "script_generating"})
+
+    try:
+        app_id = os.getenv("VOLCENGINE_SPEECH_APP_ID", "").strip()
+        access_key = os.getenv("VOLCENGINE_SPEECH_ACCESS_KEY", "").strip()
+        if not app_id or not access_key:
+            raise RuntimeError("PodcastTTS App ID 或 Access Token 未配置")
+        run_dir = OUTPUT_ROOT / (
+            datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{job_id[:4]}-script"
+        )
+        result = asyncio.run(
+            VolcenginePodcastTTS(
+                app_id,
+                access_key,
+                timeout=float(os.getenv("BYTEDANCE_TTS_TIMEOUT", "300")),
+            ).generate(
+                prompt,
+                run_dir,
+                target_minutes=target_minutes,
+                on_progress=progress,
+                topic=prompt,
+                speakers=speaker_ids,
+                only_nlp_text=True,
+            )
+        )
+        _complete_script_job(job_id, result)
+    except Exception as error:
+        _update_job(job_id, status="failed", stage="script_failed", error=str(error))
+
 def _generate_audio(
     job_id: str,
     prompt: str,
@@ -1217,7 +1267,7 @@ def _generate_document(
     creative_config: dict | None = None,
 ) -> None:
     def progress(payload: dict) -> None:
-        _live_progress(job_id, topic, payload)
+        _live_progress(job_id, topic, {**payload, "stage": "script_generating"})
 
     try:
         if file_name:
@@ -1244,6 +1294,7 @@ def _generate_document(
                 speakers=_speaker_ids_for_config(
                     _normalize_creative_config(creative_config)
                 ),
+                only_nlp_text=True,
             )
         )
         (run_dir / "podcast-result.json").write_text(
@@ -1259,9 +1310,9 @@ def _generate_document(
             }, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-        _complete_audio_job(job_id, result.final_path)
+        _complete_script_job(job_id, result)
     except Exception as error:
-        _update_job(job_id, status="failed", stage="failed", error=str(error))
+        _update_job(job_id, status="failed", stage="script_failed", error=str(error))
 
 
 def _extract_uploaded_document(file_name: str, encoded: str) -> str:
@@ -1995,7 +2046,7 @@ class Handler(BaseHTTPRequestHandler):
                 "id": job_id,
                 "kind": "document-podcast",
                 "status": "queued",
-                "stage": "queued",
+                "stage": "script_queued",
                 "topic": topic,
                 "source_type": "file" if file_name else "url" if input_url else "text",
                 "input_url": input_url or None,
@@ -2123,6 +2174,37 @@ class Handler(BaseHTTPRequestHandler):
                     # older frontend cached in the browser.
                     resolved_voices[speaker] = default_voice_prompt
             custom_voices = resolved_voices or None
+            if bool(body.get("script_only")):
+                job_id = uuid.uuid4().hex[:12]
+                job = {
+                    "id": job_id,
+                    "kind": "podcast-script",
+                    "status": "queued",
+                    "stage": "script_queued",
+                    "prompt": prompt,
+                    "topic": prompt[:200],
+                    "target_minutes": target_minutes,
+                    "character_set": character_set,
+                    "creative_config": creative_config,
+                    "completed": 0,
+                    "total": 0,
+                }
+                _store_job(job)
+                threading.Thread(
+                    target=_generate_podcast_script,
+                    args=(
+                        job_id,
+                        prompt,
+                        target_minutes,
+                        _speaker_ids_for_config(creative_config),
+                    ),
+                    daemon=True,
+                ).start()
+                self._json(202, _public_job(job))
+                return
+            if episode is None:
+                self._json(400, {"error": "请先生成并确认播客脚本"})
+                return
             fingerprint = _request_fingerprint({
                 "kind": "topic-podcast",
                 "prompt": prompt,

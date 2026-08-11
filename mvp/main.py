@@ -66,7 +66,7 @@ async def run(
     run_dir = OUTPUT_ROOT / datetime.now().strftime("%Y%m%d-%H%M%S")
     clips_dir = run_dir / "clips"
 
-    # PodcastTTS generates dialogue slices and audio in one API request.
+    # PodcastTTS accepts either a topic prompt or an approved editable dialogue.
     podcast_app_id = os.getenv("VOLCENGINE_SPEECH_APP_ID", "").strip()
     podcast_access_key = os.getenv("VOLCENGINE_SPEECH_ACCESS_KEY", "").strip()
     if podcast_app_id and podcast_access_key:
@@ -76,16 +76,30 @@ async def run(
             "total": 1,
             "completed": 0,
         })
+        selected_speakers = tuple(speaker_ids or VolcenginePodcastTTS.DEFAULT_SPEAKERS)
+        nlp_texts = (
+            [
+                {
+                    "speaker": selected_speakers[0 if turn.speaker == "HostA" else 1],
+                    "text": turn.text,
+                }
+                for turn in episode.turns
+            ]
+            if episode
+            else None
+        )
         result = await VolcenginePodcastTTS(
             podcast_app_id,
             podcast_access_key,
             timeout=float(os.getenv("BYTEDANCE_TTS_TIMEOUT", "300")),
         ).generate(
-            prompt,
+            None if episode else prompt,
             run_dir,
-            target_minutes=target_minutes,
+            target_minutes=None if episode else target_minutes,
             on_progress=on_progress,
-            speakers=speaker_ids,
+            topic=episode.topic if episode else prompt,
+            speakers=selected_speakers,
+            nlp_texts=nlp_texts,
         )
         (run_dir / "podcast-result.json").write_text(
             json.dumps({

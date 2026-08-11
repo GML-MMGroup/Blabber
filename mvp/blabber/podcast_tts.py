@@ -184,6 +184,8 @@ class VolcenginePodcastTTS:
         input_url: str | None = None,
         topic: str | None = None,
         speakers: list[str] | tuple[str, str] | None = None,
+        nlp_texts: list[dict[str, str]] | None = None,
+        only_nlp_text: bool = False,
     ) -> PodcastResult:
         run_dir.mkdir(parents=True, exist_ok=True)
         clips_dir = run_dir / "clips"
@@ -194,12 +196,25 @@ class VolcenginePodcastTTS:
         document_text = (input_text or "").strip()
         document_url = (input_url or "").strip()
         document_mode = bool(document_text or document_url)
+        dialogue_mode = bool(nlp_texts)
+        if dialogue_mode and (document_mode or prompt_text):
+            raise ValueError("nlp_texts 不能与 prompt、input_text 或 input_url 同时提供")
         if document_mode and prompt_text:
             raise ValueError("话题模式和文档模式不能同时使用")
         if document_text and document_url:
             raise ValueError("input_text 和 input_url 只能提供一个")
-        if not document_mode and not prompt_text:
-            raise ValueError("prompt、input_text 或 input_url 至少提供一个")
+        if not dialogue_mode and not document_mode and not prompt_text:
+            raise ValueError("prompt、input_text、input_url 或 nlp_texts 至少提供一个")
+        if dialogue_mode:
+            if not 1 <= len(nlp_texts or []) <= 500:
+                raise ValueError("nlp_texts 轮数必须在 1–500 之间")
+            if any(
+                not isinstance(item, dict)
+                or not str(item.get("speaker", "")).strip()
+                or not str(item.get("text", "")).strip()
+                for item in nlp_texts or []
+            ):
+                raise ValueError("nlp_texts 包含无效对白")
         if document_url and urlparse(document_url).scheme not in {"http", "https"}:
             raise ValueError("input_url 必须是 http 或 https 地址")
         if target_minutes and not document_mode:
@@ -210,16 +225,16 @@ class VolcenginePodcastTTS:
         request_payload = {
             "input_id": f"blabber-{session_id}",
             "input_text": document_text,
-            "nlp_texts": None,
+            "nlp_texts": nlp_texts,
             "prompt_text": prompt_text,
-            "action": 0 if document_mode else 4,
+            "action": 3 if dialogue_mode else 0 if document_mode else 4,
             "use_head_music": False,
             "use_tail_music": False,
             "aigc_watermark": False,
             "input_info": {
                 "input_url": document_url,
                 "return_audio_url": True,
-                "only_nlp_text": False,
+                "only_nlp_text": only_nlp_text,
             },
             "speaker_info": {
                 "random_order": False,
@@ -354,19 +369,26 @@ class VolcenginePodcastTTS:
 
         if not turns:
             raise RuntimeError("PodcastTTS 未返回切片文本")
-        if not podcast_audio:
-            raise RuntimeError("PodcastTTS 未返回音频")
-        final_path = run_dir / "final.mp3"
-        final_path.write_bytes(podcast_audio)
-        episode_topic = live_topic
-        if not episode_topic:
-            episode_topic = document_url or "文档播客"
+        episode_topic = live_topic or document_url or "文档播客"
         episode = Episode(topic=episode_topic[:200], turns=turns)
         script_path = run_dir / "script.json"
         script_path.write_text(
             json.dumps(asdict(episode), ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        final_path = run_dir / "final.mp3"
+        if only_nlp_text:
+            return PodcastResult(
+                task_id=session_id,
+                episode=episode,
+                final_path=final_path,
+                script_path=script_path,
+                clips=[],
+                provider_audio_url=None,
+            )
+        if not podcast_audio:
+            raise RuntimeError("PodcastTTS 未返回音频")
+        final_path.write_bytes(podcast_audio)
         audio_url = end_payload.get("meta_info", {}).get("audio_url")
         return PodcastResult(
             task_id=session_id,

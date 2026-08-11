@@ -25,8 +25,9 @@ test("server-renders the Blabber landing page", async () => {
   assert.match(html, /<html lang="zh-CN">/);
   assert.match(html, /<title>Blabber Studio — 动画播客制作工作台<\/title>/);
   assert.match(html, /描述你想制作的节目/);
-  assert.match(html, /生成脚本和音频/);
-  assert.match(html, /播客生成状态/);
+  assert.match(html, /生成脚本/);
+  assert.match(html, /确认并生成音频/);
+  assert.match(html, /生成并确认脚本/);
   assert.match(html, /video-generate-button/);
   assert.match(html, /字幕预览/);
   assert.match(html, /思源黑体/);
@@ -112,6 +113,9 @@ test("ships product metadata and project assets", async () => {
     assert.match(apiServer, new RegExp(voiceType));
   }
   assert.match(apiServer, /path == "\/api\/mvp\/fonts"/);
+  assert.match(apiServer, /script_only/);
+  assert.match(apiServer, /only_nlp_text=True/);
+  assert.match(page, /确认并生成音频/);
   assert.match(apiServer, /subtitle_font_size=subtitle_config\["size"\]/);
   assert.match(apiServer, /video_edit_match = re\.fullmatch/);
   assert.match(apiServer, /def _trim_video/);
