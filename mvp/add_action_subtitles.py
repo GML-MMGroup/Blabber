@@ -137,21 +137,12 @@ def _render_caption(
     image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
     bbox = draw.textbbox((0, 0), text, font=font, stroke_width=2)
-    text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
-    padding_x, padding_y = 30, 18
     center_x = width // 2
     bottom = height - margin_bottom
-    top = bottom - text_height - padding_y * 2
-    left = center_x - text_width // 2 - padding_x
-    right = center_x + text_width // 2 + padding_x
-    draw.rounded_rectangle(
-        (left, top, right, bottom),
-        radius=16,
-        fill=(0, 0, 0, 168),
-    )
+    top = bottom - text_height
     draw.text(
-        (center_x, top + padding_y - bbox[1]),
+        (center_x, top - bbox[1]),
         text,
         font=font,
         fill=(255, 255, 255, 255),
