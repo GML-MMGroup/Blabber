@@ -182,7 +182,7 @@ npm run dev
 
 ## 🚀 生产部署
 
-`site/` 已配置为 OpenAI Sites 项目。发布前请在该目录执行 `npm ci` 和 `npm test`。仓库中的 `.openai/hosting.json` 已记录现有 Sites 项目标识，请勿自行替换 `project_id`。 请将每个被 Git 跟踪的静态资源控制在 10 MB 以内；发布前先压缩超大图片，否则 Sites 源码推送可能被拒绝。
+`site/` 已配置为 OpenAI Sites 项目。发布前请在该目录执行 `npm ci` 和 `npm test`。仓库中的 `.openai/hosting.json` 已记录现有 Sites 项目标识，请勿自行替换 `project_id`。 发布前请压缩被 Git 跟踪的大型静态资源；超大图片或过大的源码传输包可能导致 Sites 拒绝源码推送。
 
 Sites 只发布网页与 Worker。`mvp/` 下的 Python 服务负责 PodcastTTS 调用、媒体持久化、FFmpeg 处理和 MP4 渲染，**不会**随 Sites 一起部署。`site/vite.config.ts` 中 `/api/mvp` 与 `/mvp-media` 到 `127.0.0.1:8787` 的代理仅在本地开发时生效。因此，要让公网版本具备完整生成功能，还需单独托管 Python 后端，并通过生产反向代理（或等效的同源路由）转发这两个路径。请勿公开 `mvp/.env`，也不要把 API 密钥放入前端环境变量。
 
