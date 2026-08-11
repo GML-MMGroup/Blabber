@@ -143,6 +143,8 @@ const voices: Voice[] = [
   { id: "zh_male_ruyayichen_uranus_bigtts", actionId: "lowpoly-host-male", name: "儒雅逸辰 2.0", note: "豆包 TTS 2.0 · 温润稳重", prompt: "成熟男性主持人，普通话标准，声音温润稳重、富有质感；语气从容友好，吐字清楚，表达理性而有亲和力。", color: "#8261c9" },
 ];
 
+const voiceOptions = voices.filter((voice, index) => voices.findIndex((item) => item.id === voice.id) === index);
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -188,6 +190,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [backgroundId, setBackgroundId] = useState("zoo");
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>(["duck", "dog"]);
+  const [selectedVoiceIds, setSelectedVoiceIds] = useState<string[]>(["zh_female_qiaopinv_uranus_bigtts", "zh_male_wennuanahu_uranus_bigtts"]);
   const [placements, setPlacements] = useState<Placement[]>(defaultPlacements);
   const [configOpen, setConfigOpen] = useState(false);
   const [config, setConfig] = useState<ConfigResponse | null>(null);
@@ -366,6 +369,17 @@ export default function Home() {
     if (sourceFileInput.current) sourceFileInput.current.value = "";
     setError("");
     setScriptDirty(false);
+    const savedCharacters = item.creative_config?.characters;
+    if (savedCharacters?.length === 2) {
+      const restored = savedCharacters.map((actionId) => characters.find((character) => character.actionId === actionId)?.id).filter(Boolean) as string[];
+      if (restored.length === 2) {
+        setSelectedCharacters(restored);
+        setSelectedVoiceIds(item.creative_config?.voices?.length === 2 ? item.creative_config.voices : restored.map((characterId) => {
+          const character = characters.find((candidate) => candidate.id === characterId);
+          return voices.find((voice) => voice.actionId === character?.actionId)?.id ?? voices[0].id;
+        }));
+      }
+    }
     const savedSubtitles = item.creative_config?.subtitles;
     if (savedSubtitles) {
       setSubtitleFontId(savedSubtitles.font);
@@ -414,7 +428,12 @@ export default function Home() {
   }
 
   function chooseCharacter(id: string) {
-    setSelectedCharacters((current) => nextCharacterSelection(current, id));
+    const next = nextCharacterSelection(selectedCharacters, id);
+    setSelectedCharacters(next);
+    setSelectedVoiceIds(next.map((characterId) => {
+      const character = characters.find((item) => item.id === characterId);
+      return voices.find((voice) => voice.actionId === character?.actionId)?.id ?? voices[0].id;
+    }));
   }
 
   function updatePlacement(index: number, key: keyof Placement, value: number) {
@@ -466,10 +485,11 @@ export default function Home() {
   async function generateAudio() {
     if (!sourceFile && !prompt.trim()) return;
     setError("");
-    const chosenVoices = selected.slice(0, 2).map((character) =>
+    const defaultVoices = selected.slice(0, 2).map((character) =>
       voices.find((voice) => voice.actionId === character.actionId) ?? voices[0]
     );
-    if (chosenVoices.length < 2) {
+    const chosenVoiceIds = defaultVoices.map((voice, index) => selectedVoiceIds[index] || voice.id);
+    if (defaultVoices.length < 2) {
       setError("请先选择两位角色");
       return;
     }
@@ -482,7 +502,7 @@ export default function Home() {
           background: background.id,
           characters: selected.map((item) => item.actionId),
           placements,
-          voices: chosenVoices.map((voice) => voice.id),
+          voices: chosenVoiceIds,
           subtitles: { font: subtitleFontId, size: subtitleSize },
         },
       } : null;
@@ -495,14 +515,14 @@ export default function Home() {
           prompt,
           character_set: characterSet,
           custom_voices: {
-            HostA: chosenVoices[0].prompt,
-            HostB: chosenVoices[1].prompt,
+            HostA: defaultVoices[0].prompt,
+            HostB: defaultVoices[1].prompt,
           },
           creative_config: {
             background: background.id,
             characters: selected.map((item) => item.actionId),
             placements,
-            voices: chosenVoices.map((voice) => voice.id),
+            voices: chosenVoiceIds,
             subtitles: { font: subtitleFontId, size: subtitleSize },
           },
         }),
@@ -935,10 +955,11 @@ export default function Home() {
             <section className="asset-section">
               {([0, 1] as const).map((hostIndex) => {
                 const character = selected[hostIndex];
-                const voice = voices.find((item) => item.actionId === character?.actionId);
+                const defaultVoice = voices.find((item) => item.actionId === character?.actionId);
+                const voice = voiceOptions.find((item) => item.id === selectedVoiceIds[hostIndex]) ?? defaultVoice;
                 return <div className="voice-select" key={hostIndex}>
                   <label>{hostIndex === 0 ? "Host A · 左侧" : "Host B · 右侧"}</label>
-                  <div>{voice && <button className="selected" disabled><i style={{ borderColor: voice.color, color: voice.color }}>▶</i><span><b>{voice.name}</b><small>{voice.note} · 随角色自动匹配</small></span><Wave color={voice.color} /></button>}</div>
+                  <div>{voice && <><select value={voice.id} onChange={(event) => setSelectedVoiceIds((current) => current.map((id, index) => index === hostIndex ? event.target.value : id))} aria-label={`${hostIndex === 0 ? "Host A" : "Host B"} 音色`}><option value={defaultVoice?.id}>{defaultVoice?.name}（角色默认）</option>{voiceOptions.filter((option) => option.id !== defaultVoice?.id).map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select><small className="voice-detail">{voice.note}<code>{voice.id}</code></small></>}</div>
                 </div>;
               })}
             </section>

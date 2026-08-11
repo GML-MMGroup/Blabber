@@ -280,7 +280,10 @@ ACTION_CHARACTER_SPEAKER_IDS = {
     "flat-tech-host-male": "zh_male_m191_uranus_bigtts",
     "lowpoly-host-female": "zh_female_sophie_uranus_bigtts",
     "lowpoly-host-male": "zh_male_ruyayichen_uranus_bigtts",
+    "toon3d-luna": "zh_female_tianmeitaozi_uranus_bigtts",
+    "toon3d-milo": "zh_male_shaonianzixin_uranus_bigtts",
 }
+AVAILABLE_SPEAKER_IDS = frozenset(ACTION_CHARACTER_SPEAKER_IDS.values())
 ACTION_CHARACTERS = frozenset(ACTION_CHARACTER_SPEAKER_IDS)
 ACTION_CHARACTER_VOICE_PROMPTS = {
     "dog": (
@@ -299,6 +302,8 @@ ACTION_CHARACTER_VOICE_PROMPTS = {
     "flat-tech-host-male": "青年男性科技主持人，普通话标准，声音清晰沉稳、专业可信。",
     "lowpoly-host-female": "成熟女性主持人，普通话标准，声音温和从容、富有质感。",
     "lowpoly-host-male": "成熟男性主持人，普通话标准，声音温润稳重、富有质感。",
+    "toon3d-luna": "青年女性三维卡通主持人，普通话标准，声音甜美明亮、自然活泼。",
+    "toon3d-milo": "青年男性三维卡通主持人，普通话标准，声音清爽阳光、富有少年感。",
 }
 ACTION_SCENES = {
     "zoo": {
@@ -489,21 +494,29 @@ def _normalize_creative_config(raw_config) -> dict:
         _clamp_number(raw_subtitles.get("size"), 28, 88, 48)
     )
 
+    default_voices = [ACTION_CHARACTER_SPEAKER_IDS[character] for character in characters]
+    voices = default_voices
+    raw_voices = raw.get("voices")
+    if isinstance(raw_voices, list) and len(raw_voices) == 2:
+        requested = [str(item).strip() for item in raw_voices]
+        voices = [
+            voice if voice in AVAILABLE_SPEAKER_IDS else default_voices[index]
+            for index, voice in enumerate(requested)
+        ]
+
     return {
         "background": background,
         "characters": characters,
         "placements": placements,
         "scene": str(raw.get("scene", "balanced"))[:40],
-        "voices": raw.get("voices", []),
+        "voices": voices,
         "subtitles": {"font": subtitle_font, "size": subtitle_size},
     }
 
 
 def _speaker_ids_for_config(creative_config: dict) -> list[str]:
-    return [
-        ACTION_CHARACTER_SPEAKER_IDS[character]
-        for character in creative_config["characters"]
-    ]
+    config = _normalize_creative_config(creative_config)
+    return list(config["voices"])
 
 
 def _compose_action_episode_video(
