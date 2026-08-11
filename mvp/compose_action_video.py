@@ -149,6 +149,8 @@ def _pick_action_asset(
     patterns = (
         f"{character}-{action}-*-alpha-prores4444.mov",
         f"{character}-{action}-*-alpha-vp9.webm",
+        f"{character}-combined-alpha-prores4444.mov",
+        f"{character}-combined-alpha-vp9.webm",
     )
     for pattern in patterns:
         candidates = sorted(

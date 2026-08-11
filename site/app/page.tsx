@@ -98,11 +98,27 @@ const fallbackSubtitleFonts: SubtitleFontInfo[] = [
 
 const backgrounds: Background[] = [
   { id: "zoo", name: "动物园直播间", image: "/scene-zoo.png", foreground: "/scene-zoo-foreground.png", accent: "#34a978" },
+  { id: "studio", name: "深夜播客间", image: "/scene-studio-clean.png", foreground: "/scene-studio-foreground.png", thumbnail: "/scene-studio.png", accent: "#8b6cff" },
+  { id: "library", name: "复古图书馆", image: "/scene-library.png", foreground: "/scene-library-foreground.png", thumbnail: "/scene-library-composite.jpg", accent: "#b87845" },
+  { id: "seaside", name: "海滨电台", image: "/scene-seaside.png", foreground: "/scene-seaside-foreground.png", thumbnail: "/scene-seaside-composite.jpg", accent: "#39a8c8" },
+  { id: "space", name: "星际直播舱", image: "/scene-space.png", foreground: "/scene-space-foreground.png", thumbnail: "/scene-space-composite.jpg", accent: "#725df1" },
+  { id: "ink-tea", name: "水墨茶室", image: "/scene-ink-tea.png", foreground: "/scene-ink-tea-foreground.png", thumbnail: "/scene-ink-tea-composite.jpg", accent: "#7c8b66" },
+  { id: "anime-neon", name: "霓虹动漫台", image: "/scene-anime-neon.png", foreground: "/scene-anime-neon-foreground.png", thumbnail: "/scene-anime-neon-composite.jpg", accent: "#ef5dba" },
+  { id: "flat-tech", name: "扁平科技台", image: "/scene-flat-tech.png", foreground: "/scene-flat-tech-foreground.png", thumbnail: "/scene-flat-tech-composite.jpg", accent: "#397ce5" },
+  { id: "lowpoly", name: "低多边形演播室", image: "/scene-lowpoly.png", foreground: "/scene-lowpoly-foreground.png", thumbnail: "/scene-lowpoly-composite.jpg", accent: "#8f68d6" },
 ];
 
 const characters: Character[] = [
   { id: "duck", name: "嘎嘎", image: "/funny-podcast-duck.png", actionPreview: "/action-preview-duck.png", actionId: "duck" },
   { id: "dog", name: "阿汪", image: "/funny-podcast-dog.png", actionPreview: "/action-preview-dog.png", actionId: "dog" },
+  { id: "cartoon-female", name: "活力女生", image: "/cartoon-female.png", actionPreview: "/action-preview-female.png", actionId: "female" },
+  { id: "cartoon-male", name: "阳光男生", image: "/cartoon-male.png", actionPreview: "/action-preview-male.png", actionId: "male" },
+  { id: "anime-reference-host-female", name: "动漫女生", image: "/anime-host-female.png", actionPreview: "/action-preview-anime-reference-host-female.png", actionId: "anime-reference-host-female" },
+  { id: "anime-reference-host-male", name: "动漫男生", image: "/anime-host-male.png", actionPreview: "/action-preview-anime-reference-host-male.png", actionId: "anime-reference-host-male" },
+  { id: "flat-tech-host-female", name: "科技女生", image: "/flat-tech-host-female.png", actionPreview: "/action-preview-flat-tech-host-female.png", actionId: "flat-tech-host-female" },
+  { id: "flat-tech-host-male", name: "科技男生", image: "/flat-tech-host-male.png", actionPreview: "/action-preview-flat-tech-host-male.png", actionId: "flat-tech-host-male" },
+  { id: "lowpoly-host-female", name: "低多边形女生", image: "/lowpoly-host-female.png", actionPreview: "/action-preview-lowpoly-host-female.png", actionId: "lowpoly-host-female" },
+  { id: "lowpoly-host-male", name: "低多边形男生", image: "/lowpoly-host-male.png", actionPreview: "/action-preview-lowpoly-host-male.png", actionId: "lowpoly-host-male" },
 ];
 
 const defaultPlacements: Placement[] = [
@@ -113,6 +129,14 @@ const defaultPlacements: Placement[] = [
 const voices: Voice[] = [
   { id: "zh_female_qiaopinv_uranus_bigtts", actionId: "duck", name: "俏皮女声 2.0", note: "豆包 TTS 2.0 · 俏皮灵动", prompt: "青年感拟人卡通角色，普通话标准，声音清脆明亮、机灵俏皮；语气自信活泼，带自然笑意，吐字清楚，节奏轻快。", color: "#ff9254" },
   { id: "zh_male_wennuanahu_uranus_bigtts", actionId: "dog", name: "温暖阿虎 2.0", note: "豆包 TTS 2.0 · 热情温暖", prompt: "青年男性拟人卡通角色，普通话标准，声音阳光温暖、热情有活力；语气友善又略带顽皮，节奏轻快，具有亲和力。", color: "#31b789" },
+  { id: "zh_female_linjianvhai_uranus_bigtts", actionId: "female", name: "邻家女孩 2.0", note: "豆包 TTS 2.0 · 亲切自然", prompt: "青年女性主持人，普通话标准，声音清亮亲切、自然大方；语速适中，表达温暖，带轻松自然的笑意。", color: "#ff6f91" },
+  { id: "zh_male_linjiananhai_uranus_bigtts", actionId: "male", name: "邻家男孩 2.0", note: "豆包 TTS 2.0 · 阳光松弛", prompt: "青年男性主持人，普通话标准，声音清朗阳光、自然真诚；语速适中，表达轻松，像亲切健谈的年轻主播。", color: "#4f82ff" },
+  { id: "zh_female_tianmeitaozi_uranus_bigtts", actionId: "anime-reference-host-female", name: "甜美桃子 2.0", note: "豆包 TTS 2.0 · 甜美灵动", prompt: "青年女性动漫主持人，普通话标准，声音甜美灵动、清澈自然；情绪丰富但不夸张，语气轻盈，表达活泼专业。", color: "#ee66c4" },
+  { id: "zh_male_shaonianzixin_uranus_bigtts", actionId: "anime-reference-host-male", name: "少年梓辛 2.0", note: "豆包 TTS 2.0 · 清爽少年", prompt: "青年男性动漫主持人，普通话标准，声音清爽自信、富有少年感；语气自然有朝气，反应敏捷，节奏明快。", color: "#846cff" },
+  { id: "zh_female_cancan_uranus_bigtts", actionId: "flat-tech-host-female", name: "知性灿灿 2.0", note: "豆包 TTS 2.0 · 知性清晰", prompt: "青年女性科技主持人，普通话标准，声音知性清晰、干练亲切；专业术语吐字准确，节奏稳定，表达有条理。", color: "#29a9d6" },
+  { id: "zh_male_m191_uranus_bigtts", actionId: "flat-tech-host-male", name: "云舟 2.0", note: "豆包 TTS 2.0 · 清晰专业", prompt: "青年男性科技主持人，普通话标准，声音清晰沉稳、专业可信；表达简洁有条理，语速适中，语气自然从容。", color: "#3376d8" },
+  { id: "zh_female_sophie_uranus_bigtts", actionId: "lowpoly-host-female", name: "魅力苏菲 2.0", note: "豆包 TTS 2.0 · 成熟从容", prompt: "成熟女性主持人，普通话标准，声音温和从容、富有质感；表达优雅自然，节奏舒缓，适合文化与创意话题。", color: "#bd6bd6" },
+  { id: "zh_male_ruyayichen_uranus_bigtts", actionId: "lowpoly-host-male", name: "儒雅逸辰 2.0", note: "豆包 TTS 2.0 · 温润稳重", prompt: "成熟男性主持人，普通话标准，声音温润稳重、富有质感；语气从容友好，吐字清楚，表达理性而有亲和力。", color: "#8261c9" },
 ];
 
 function fileToBase64(file: File): Promise<string> {

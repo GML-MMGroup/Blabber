@@ -272,6 +272,14 @@ VIDEO_EDIT_LOCK = threading.Lock()
 ACTION_CHARACTER_SPEAKER_IDS = {
     "duck": "zh_female_qiaopinv_uranus_bigtts",
     "dog": "zh_male_wennuanahu_uranus_bigtts",
+    "female": "zh_female_linjianvhai_uranus_bigtts",
+    "male": "zh_male_linjiananhai_uranus_bigtts",
+    "anime-reference-host-female": "zh_female_tianmeitaozi_uranus_bigtts",
+    "anime-reference-host-male": "zh_male_shaonianzixin_uranus_bigtts",
+    "flat-tech-host-female": "zh_female_cancan_uranus_bigtts",
+    "flat-tech-host-male": "zh_male_m191_uranus_bigtts",
+    "lowpoly-host-female": "zh_female_sophie_uranus_bigtts",
+    "lowpoly-host-male": "zh_male_ruyayichen_uranus_bigtts",
 }
 ACTION_CHARACTERS = frozenset(ACTION_CHARACTER_SPEAKER_IDS)
 ACTION_CHARACTER_VOICE_PROMPTS = {
@@ -283,12 +291,60 @@ ACTION_CHARACTER_VOICE_PROMPTS = {
         "青年感拟人卡通角色，普通话标准，声音清脆明亮、机灵俏皮；"
         "语气自信活泼，带自然笑意，吐字清楚，节奏轻快。"
     ),
+    "female": "青年女性主持人，普通话标准，声音清亮亲切、自然大方，表达温暖。",
+    "male": "青年男性主持人，普通话标准，声音清朗阳光、自然真诚，表达轻松。",
+    "anime-reference-host-female": "青年女性动漫主持人，普通话标准，声音甜美灵动、清澈自然。",
+    "anime-reference-host-male": "青年男性动漫主持人，普通话标准，声音清爽自信、富有少年感。",
+    "flat-tech-host-female": "青年女性科技主持人，普通话标准，声音知性清晰、干练亲切。",
+    "flat-tech-host-male": "青年男性科技主持人，普通话标准，声音清晰沉稳、专业可信。",
+    "lowpoly-host-female": "成熟女性主持人，普通话标准，声音温和从容、富有质感。",
+    "lowpoly-host-male": "成熟男性主持人，普通话标准，声音温润稳重、富有质感。",
 }
 ACTION_SCENES = {
     "zoo": {
         "background": PROJECT_ROOT / "assets" / "background" / "zoo_background.png",
         "foreground": PROJECT_ROOT / "assets" / "background" / "zoo_foreground.png",
         "foreground_key_color": "0xFF00FF",
+    },
+    "studio": {
+        "background": PROJECT_ROOT / "assets" / "background" / "scene2-background-mics-out-100px-1920x1080.png",
+        "foreground": PROJECT_ROOT / "assets" / "background" / "scene2-foreground-mics-out-100px-alpha-1920x1080_副本.png",
+        "foreground_key_color": None,
+    },
+    "library": {
+        "background": PROJECT_ROOT / "assets" / "background" / "library_background.png",
+        "foreground": PROJECT_ROOT / "assets" / "background" / "library_foreground.png",
+        "foreground_key_color": None,
+    },
+    "seaside": {
+        "background": PROJECT_ROOT / "assets" / "background" / "seaside_background.png",
+        "foreground": PROJECT_ROOT / "assets" / "background" / "seaside_foreground.png",
+        "foreground_key_color": "0xFF00FF",
+    },
+    "space": {
+        "background": PROJECT_ROOT / "assets" / "background" / "space_background.png",
+        "foreground": PROJECT_ROOT / "assets" / "background" / "space_foreground.png",
+        "foreground_key_color": None,
+    },
+    "ink-tea": {
+        "background": PROJECT_ROOT / "assets" / "background" / "ink_tea_background.png",
+        "foreground": PROJECT_ROOT / "assets" / "background" / "ink_tea_foreground.png",
+        "foreground_key_color": None,
+    },
+    "anime-neon": {
+        "background": PROJECT_ROOT / "assets" / "background" / "scene_anime_neon_background.png",
+        "foreground": PROJECT_ROOT / "assets" / "background" / "scene_anime_neon_foreground.png",
+        "foreground_key_color": None,
+    },
+    "flat-tech": {
+        "background": PROJECT_ROOT / "assets" / "background" / "scene_flat_tech_background.png",
+        "foreground": PROJECT_ROOT / "assets" / "background" / "scene_flat_tech_foreground.png",
+        "foreground_key_color": None,
+    },
+    "lowpoly": {
+        "background": PROJECT_ROOT / "assets" / "background" / "scene_lowpoly_background.png",
+        "foreground": PROJECT_ROOT / "assets" / "background" / "scene_lowpoly_foreground.png",
+        "foreground_key_color": None,
     },
 }
 

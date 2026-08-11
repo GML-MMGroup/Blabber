@@ -40,8 +40,12 @@ test("server-renders the Blabber landing page", async () => {
   assert.match(html, /俏皮女声 2\.0/);
   assert.match(html, /温暖阿虎 2\.0/);
   assert.match(html, /动物园直播间/);
-  assert.doesNotMatch(html, /深夜播客间|复古图书馆|海滨电台/);
-  assert.doesNotMatch(html, /阳光男生|活力女生|动漫男生|动漫女生/);
+  for (const label of ["深夜播客间", "复古图书馆", "海滨电台", "星际直播舱", "水墨茶室", "霓虹动漫台", "扁平科技台", "低多边形演播室"]) {
+    assert.match(html, new RegExp(label));
+  }
+  for (const label of ["阳光男生", "活力女生", "动漫男生", "动漫女生", "科技男生", "科技女生", "低多边形男生", "低多边形女生"]) {
+    assert.match(html, new RegExp(label));
+  }
   assert.doesNotMatch(html, /3D Milo|3D Luna|黏土小熊猫|黏土小水獭/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/);
 });
@@ -58,6 +62,22 @@ test("ships product metadata and project assets", async () => {
     access(new URL("../public/scene-zoo-foreground.png", import.meta.url)),
     access(new URL("../public/action-preview-dog.png", import.meta.url)),
     access(new URL("../public/action-preview-duck.png", import.meta.url)),
+    access(new URL("../public/action-preview-female.png", import.meta.url)),
+    access(new URL("../public/action-preview-male.png", import.meta.url)),
+    access(new URL("../public/action-preview-anime-reference-host-female.png", import.meta.url)),
+    access(new URL("../public/action-preview-anime-reference-host-male.png", import.meta.url)),
+    access(new URL("../public/action-preview-flat-tech-host-female.png", import.meta.url)),
+    access(new URL("../public/action-preview-flat-tech-host-male.png", import.meta.url)),
+    access(new URL("../public/action-preview-lowpoly-host-female.png", import.meta.url)),
+    access(new URL("../public/action-preview-lowpoly-host-male.png", import.meta.url)),
+    access(new URL("../public/scene-studio-clean.png", import.meta.url)),
+    access(new URL("../public/scene-library.png", import.meta.url)),
+    access(new URL("../public/scene-seaside.png", import.meta.url)),
+    access(new URL("../public/scene-space.png", import.meta.url)),
+    access(new URL("../public/scene-ink-tea.png", import.meta.url)),
+    access(new URL("../public/scene-anime-neon.png", import.meta.url)),
+    access(new URL("../public/scene-flat-tech.png", import.meta.url)),
+    access(new URL("../public/scene-lowpoly.png", import.meta.url)),
   ]);
 
   assert.match(layout, /openGraph/);
@@ -79,6 +99,14 @@ test("ships product metadata and project assets", async () => {
   for (const voiceType of [
     "zh_female_qiaopinv_uranus_bigtts",
     "zh_male_wennuanahu_uranus_bigtts",
+    "zh_female_linjianvhai_uranus_bigtts",
+    "zh_male_linjiananhai_uranus_bigtts",
+    "zh_female_tianmeitaozi_uranus_bigtts",
+    "zh_male_shaonianzixin_uranus_bigtts",
+    "zh_female_cancan_uranus_bigtts",
+    "zh_male_m191_uranus_bigtts",
+    "zh_female_sophie_uranus_bigtts",
+    "zh_male_ruyayichen_uranus_bigtts",
   ]) {
     assert.match(page, new RegExp(voiceType));
     assert.match(apiServer, new RegExp(voiceType));

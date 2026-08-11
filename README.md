@@ -98,8 +98,8 @@ Every syllable drives the character's mouth shapes. Change a line of dialogue, a
 Blabber cuts like a real show director: wide shots to establish, close-ups on the speaker, reaction shots on the listener, with cut timing driven by the rhythm of the conversation.
 
 ### 7. 🗂️ Bundled Release Library
-- **2 video characters** — Gaga and Awang
-- **1 scene** — the layered Zoo podcast set
+- **10 video characters** — Gaga, Awang, Cartoon, Anime, Flat Tech, and Low Poly hosts
+- **9 scenes** — zoo, studio, library, seaside, space, tea room, anime neon, flat tech, and low poly
 - **Character-matched voices** — a dedicated PodcastTTS voice prompt for each character
 
 Mix and match freely; a character stays visually consistent across every shot and every episode.
@@ -133,7 +133,7 @@ Prerequisites:
 - Python `>=3.9`
 - `ffmpeg` and `ffprobe` available on `PATH`, with `libvpx-vp9` support
 - About 1 GB of free disk space for runtime caches and output. The bundled
-  VP9 Alpha action assets add about 9 MB to the regular Git clone; Git LFS is
+  VP9 Alpha action assets add about 52 MB to the regular Git clone; Git LFS is
   not required.
 
 First-time setup:
