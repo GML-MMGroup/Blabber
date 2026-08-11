@@ -27,21 +27,31 @@ test("server-renders the Blabber landing page", async () => {
   assert.match(html, /描述你想制作的节目/);
   assert.match(html, /生成脚本和音频/);
   assert.match(html, /播客生成状态/);
+  assert.match(html, /video-generate-button/);
+  assert.match(html, /字幕预览/);
+  assert.match(html, /思源黑体/);
+  assert.match(html, /字幕大小/);
+  assert.match(html, /视频裁剪与拼接/);
+  assert.match(html, /生成视频后可裁剪、排序并拼接片段/);
+  assert.match(html, /拼接序列/);
   assert.match(html, /最多选择两位；再次点击取消。第一位在左，第二位在右/);
   assert.match(html, /阿汪/);
   assert.match(html, /嘎嘎/);
+  assert.match(html, /俏皮女声 2\.0/);
+  assert.match(html, /温暖阿虎 2\.0/);
   assert.match(html, /动物园直播间/);
-  assert.doesNotMatch(html, /深夜播客间|复古图书馆|海滨电台|星际直播舱|水墨茶室|霓虹动漫台|扁平科技台|低多边形演播室/);
-  assert.doesNotMatch(html, /阳光男生|活力女生/);
-  assert.doesNotMatch(html, /3D Milo|3D Luna|黏土小熊猫|黏土小水獭|动漫男生|动漫女生|科技男生|科技女生|低多边形男生|低多边形女生/);
+  assert.doesNotMatch(html, /深夜播客间|复古图书馆|海滨电台/);
+  assert.doesNotMatch(html, /阳光男生|活力女生|动漫男生|动漫女生/);
+  assert.doesNotMatch(html, /3D Milo|3D Luna|黏土小熊猫|黏土小水獭/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/);
 });
 
 test("ships product metadata and project assets", async () => {
-  const [layout, page, packageJson] = await Promise.all([
+  const [layout, page, packageJson, apiServer] = await Promise.all([
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../../mvp/api_server.py", import.meta.url), "utf8"),
     access(new URL("../public/blabber-banner.png", import.meta.url)),
     access(new URL("../public/og.png", import.meta.url)),
     access(new URL("../public/scene-zoo.png", import.meta.url)),
@@ -57,6 +67,29 @@ test("ships product metadata and project assets", async () => {
   assert.match(page, /scene-zoo-foreground\.png/);
   assert.match(page, /src=\{character\.actionPreview\}/);
   assert.match(page, /if \(current\.includes\(id\)\) return current\.filter/);
+  assert.match(page, /href=\{job\.audio_url\} target="_blank" rel="noreferrer">播放完整音频/);
+  assert.match(page, /href=\{job\.provider_audio_url\} download="blabber-podcast\.mp3">下载音频/);
+  assert.match(page, /fetch\("\/api\/mvp\/fonts"\)/);
+  assert.match(page, /\/api\/mvp\/fonts\/\$\{fontId\}\/download/);
+  assert.match(page, /subtitles: \{ font: subtitleFontId, size: subtitleSize \}/);
+  assert.match(page, /\/api\/mvp\/jobs\/\$\{job\.id\}\/video\/edit/);
+  assert.match(page, /拼接并导出/);
+  assert.match(page, /video-button-sheen/);
+  assert.match(page, /Math\.max\(0, Math\.min\(99/);
+  for (const voiceType of [
+    "zh_female_qiaopinv_uranus_bigtts",
+    "zh_male_wennuanahu_uranus_bigtts",
+  ]) {
+    assert.match(page, new RegExp(voiceType));
+    assert.match(apiServer, new RegExp(voiceType));
+  }
+  assert.match(apiServer, /path == "\/api\/mvp\/fonts"/);
+  assert.match(apiServer, /subtitle_font_size=subtitle_config\["size"\]/);
+  assert.match(apiServer, /video_edit_match = re\.fullmatch/);
+  assert.match(apiServer, /def _trim_video/);
+  assert.match(apiServer, /def _edit_video/);
+  assert.match(apiServer, /stage="video_prepare", completed=0, total=1/);
+  assert.doesNotMatch(apiServer, /stage="video", completed=1, total=2/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });

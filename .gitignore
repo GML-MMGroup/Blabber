@@ -12,6 +12,9 @@
 .DS_Store
 **/.DS_Store
 
+# Downloaded subtitle fonts are runtime cache, not repository assets.
+/mvp/fonts/
+
 # Python caches and local environments
 __pycache__/
 **/__pycache__/

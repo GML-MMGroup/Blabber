@@ -6,6 +6,25 @@ import type { CSSProperties } from "react";
 type Speaker = "HostA" | "HostB";
 type Turn = { speaker: Speaker; text: string };
 type Episode = { topic: string; turns: Turn[] };
+type SubtitleConfig = { font: string; size: number };
+type VideoSegment = { start: number; end: number; duration?: number };
+type VideoEdit = { start?: number; end?: number; segments?: VideoSegment[]; duration: number; source_duration: number };
+type SubtitleFontInfo = {
+  id: string;
+  name: string;
+  family: string;
+  face_family?: string | null;
+  installed: boolean;
+  downloadable: boolean;
+  size_mb?: number | null;
+  preview_url?: string | null;
+};
+type FontResponse = {
+  fonts: SubtitleFontInfo[];
+  default_font: string;
+  font?: SubtitleFontInfo;
+  error?: string;
+};
 type Job = {
   id: string;
   status: "queued" | "running" | "complete" | "failed";
@@ -19,12 +38,21 @@ type Job = {
   source_type?: "file" | "url" | "text";
   file_name?: string;
   video_url?: string;
+  edited_video_url?: string;
+  video_edit?: VideoEdit;
   error?: string;
   topic?: string;
   prompt?: string;
   created_at?: string;
   updated_at?: string;
   reused?: boolean;
+  creative_config?: {
+    background?: string;
+    characters?: string[];
+    placements?: Placement[];
+    voices?: string[];
+    subtitles?: SubtitleConfig;
+  };
 };
 type Background = {
   id: string;
@@ -39,7 +67,7 @@ type Character = {
   name: string;
   image: string;
   actionPreview: string;
-  actionId: "dog" | "duck";
+  actionId: string;
 };
 type Voice = { id: string; actionId: Character["actionId"]; name: string; note: string; prompt: string; color: string };
 type Placement = { x: number; y: number; scale: number };
@@ -62,6 +90,11 @@ type ConfigResponse = {
 };
 
 const defaultPrompt = "做一期关于咖啡文化的轻松播客";
+const fallbackSubtitleFonts: SubtitleFontInfo[] = [
+  { id: "system", name: "本机中文字体", family: '"PingFang SC", "Microsoft YaHei", sans-serif', installed: true, downloadable: false },
+  { id: "noto-sans-sc", name: "思源黑体", face_family: "Blabber Noto Sans SC", family: '"Blabber Noto Sans SC", "Noto Sans CJK SC", sans-serif', installed: false, downloadable: true, size_mb: 15.7 },
+  { id: "noto-serif-sc", name: "思源宋体", face_family: "Blabber Noto Serif SC", family: '"Blabber Noto Serif SC", "Noto Serif CJK SC", serif', installed: false, downloadable: true, size_mb: 18 },
+];
 
 const backgrounds: Background[] = [
   { id: "zoo", name: "动物园直播间", image: "/scene-zoo.png", foreground: "/scene-zoo-foreground.png", accent: "#34a978" },
@@ -78,8 +111,8 @@ const defaultPlacements: Placement[] = [
 ];
 
 const voices: Voice[] = [
-  { id: "podcast_duck", actionId: "duck", name: "嘎嘎专属", note: "PodcastTTS · 自动双声线", prompt: "青年女性卡通角色，普通话标准，声音清脆明亮、机灵俏皮；语气自信活泼，带自然笑意，吐字清楚，像反应敏捷的年轻播客主持人。", color: "#ff9254" },
-  { id: "podcast_dog", actionId: "dog", name: "阿汪专属", note: "PodcastTTS · 自动双声线", prompt: "青年男性卡通角色，普通话标准，声音阳光清朗、热情有活力；语气忠诚友善又略带顽皮，节奏轻快，像幽默亲切的年轻播客主持人。", color: "#31b789" },
+  { id: "zh_female_qiaopinv_uranus_bigtts", actionId: "duck", name: "俏皮女声 2.0", note: "豆包 TTS 2.0 · 俏皮灵动", prompt: "青年感拟人卡通角色，普通话标准，声音清脆明亮、机灵俏皮；语气自信活泼，带自然笑意，吐字清楚，节奏轻快。", color: "#ff9254" },
+  { id: "zh_male_wennuanahu_uranus_bigtts", actionId: "dog", name: "温暖阿虎 2.0", note: "豆包 TTS 2.0 · 热情温暖", prompt: "青年男性拟人卡通角色，普通话标准，声音阳光温暖、热情有活力；语气友善又略带顽皮，节奏轻快，具有亲和力。", color: "#31b789" },
 ];
 
 function fileToBase64(file: File): Promise<string> {
@@ -98,6 +131,14 @@ function formatFileSize(size: number): string {
   return size < 1024 * 1024
     ? `${Math.max(1, Math.round(size / 1024))} KB`
     : `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatVideoTime(value: number): string {
+  const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
+  const minutes = Math.floor(safe / 60);
+  const seconds = Math.floor(safe % 60);
+  const tenths = Math.floor((safe % 1) * 10);
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${tenths}`;
 }
 
 function Wave({ color }: { color: string }) {
@@ -128,22 +169,92 @@ export default function Home() {
   const [configMessage, setConfigMessage] = useState("");
   const [history, setHistory] = useState<Job[]>([]);
   const [scriptDirty, setScriptDirty] = useState(false);
+  const [subtitleDirty, setSubtitleDirty] = useState(false);
+  const [subtitleFontId, setSubtitleFontId] = useState("system");
+  const [subtitleSize, setSubtitleSize] = useState(48);
+  const [subtitleFonts, setSubtitleFonts] = useState<SubtitleFontInfo[]>(fallbackSubtitleFonts);
+  const [fontBusy, setFontBusy] = useState("");
+  const [fontMessage, setFontMessage] = useState("");
+  const loadedFontFaces = useRef(new Set<string>());
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [playhead, setPlayhead] = useState(0);
+  const [trimBusy, setTrimBusy] = useState(false);
+  const [trimMessage, setTrimMessage] = useState("");
+  const [trimError, setTrimError] = useState(false);
+  const [trimPlaying, setTrimPlaying] = useState(false);
+  const [trimSegments, setTrimSegments] = useState<VideoSegment[]>([]);
 
   const background = backgrounds.find((item) => item.id === backgroundId) ?? backgrounds[0];
   const selected = selectedCharacters.map((id) => characters.find((item) => item.id === id)).filter(Boolean) as Character[];
+  const selectedSubtitleFont = subtitleFonts.find((item) => item.id === subtitleFontId) ?? subtitleFonts[0];
+  const subtitleFontReady = Boolean(selectedSubtitleFont?.installed);
+  const videoChangesPending = scriptDirty || subtitleDirty;
+  const rawSubtitlePreviewText = episode.turns.find((turn) => turn.text.trim())?.text.trim() || prompt.trim() || "欢迎来到 Blabber 动画播客";
+  const subtitlePreviewText = rawSubtitlePreviewText.length > 22 ? `${rawSubtitlePreviewText.slice(0, 22)}…` : rawSubtitlePreviewText;
   const busy = Boolean(job && !["complete", "failed"].includes(job.status));
   const audioReady = Boolean(job?.audio_url);
-  const videoReady = Boolean(job?.video_url) && !scriptDirty;
+  const videoReady = Boolean(job?.video_url) && !scriptDirty && !subtitleDirty;
   const videoStage = Boolean(job?.stage?.startsWith("video"));
   const audioActive = Boolean(job && !audioReady && !videoStage && !["complete", "failed"].includes(job.status));
   const videoActive = Boolean(job && videoStage && !["complete", "failed"].includes(job.status));
-  const videoWaiting = job?.stage === "video_waiting";
+  const videoWaiting = ["video_queued", "video_waiting", "video_prepare"].includes(job?.stage ?? "");
   const audioProgress = audioReady ? 100 : audioActive && job?.total ? Math.round((job.completed / job.total) * 100) : 0;
-  const videoProgress = videoReady ? 100 : videoActive && job?.total ? Math.round((job.completed / job.total) * 100) : 0;
+  const videoProgress = videoReady
+    ? 100
+    : videoActive && job?.total
+      ? Math.max(0, Math.min(99, Math.round((job.completed / job.total) * 100)))
+      : 0;
+  const videoButtonLabel = !subtitleFontReady
+    ? "请先下载字体"
+    : videoChangesPending
+      ? "更新字幕并生成"
+      : videoReady
+        ? "视频已生成"
+        : videoWaiting
+          ? "正在准备"
+          : videoActive
+            ? `渲染中 ${videoProgress}%`
+            : "生成视频";
+  const trimDuration = Math.max(0, trimEnd - trimStart);
+  const trimReady = videoReady && videoDuration >= 0.5 && trimDuration >= 0.5;
+  const queuedSegments = trimSegments.length ? trimSegments : [{ start: trimStart, end: trimEnd }];
+  const savedSegments = job?.video_edit?.segments?.length
+    ? job.video_edit.segments
+    : typeof job?.video_edit?.start === "number" && typeof job.video_edit.end === "number"
+      ? [{ start: job.video_edit.start, end: job.video_edit.end }]
+      : [];
+  const sequenceDuration = trimSegments.reduce((total, segment) => total + segment.end - segment.start, 0);
+  const editDirty = !job?.edited_video_url
+    || savedSegments.length !== queuedSegments.length
+    || savedSegments.some((segment, index) => (
+      Math.abs(segment.start - queuedSegments[index].start) > 0.05
+      || Math.abs(segment.end - queuedSegments[index].end) > 0.05
+    ));
 
   const characterSet = "cartoon";
 
-  useEffect(() => { void loadHistory(); }, []);
+  useEffect(() => {
+    void loadHistory();
+    void loadSubtitleFonts();
+  }, []);
+
+  useEffect(() => {
+    const saved = job?.video_edit;
+    const duration = saved?.source_duration ?? 0;
+    setVideoDuration(duration);
+    setTrimStart(saved?.start ?? 0);
+    setTrimEnd(saved?.end ?? duration);
+    setPlayhead(saved?.start ?? 0);
+    setTrimMessage(job?.edited_video_url ? "已恢复上次导出的剪辑片段" : "");
+    setTrimError(false);
+    setTrimPlaying(false);
+    setTrimSegments(saved?.segments?.length
+      ? saved.segments.map((segment) => ({ start: segment.start, end: segment.end }))
+      : []);
+  }, [job?.id, job?.video_url]);
 
   useEffect(() => {
     if (!job?.id || ["complete", "failed"].includes(job.status)) return;
@@ -175,6 +286,50 @@ export default function Home() {
     }
   }
 
+  async function activateSubtitleFont(font: SubtitleFontInfo) {
+    if (!font.installed || !font.preview_url || !font.face_family || loadedFontFaces.current.has(font.id)) return;
+    const face = new FontFace(font.face_family, `url("${font.preview_url}")`);
+    await face.load();
+    document.fonts.add(face);
+    loadedFontFaces.current.add(font.id);
+  }
+
+  async function loadSubtitleFonts() {
+    try {
+      const response = await fetch("/api/mvp/fonts");
+      const next: FontResponse = await response.json();
+      if (!response.ok) throw new Error(next.error || "字体列表读取失败");
+      const available = Array.isArray(next.fonts) && next.fonts.length ? next.fonts : fallbackSubtitleFonts;
+      setSubtitleFonts(available);
+      setSubtitleFontId((current) => available.some((font) => font.id === current && (font.installed || current !== "system")) ? current : next.default_font);
+      await Promise.all(available.map((font) => activateSubtitleFont(font)));
+    } catch (cause) {
+      setFontMessage(cause instanceof Error ? cause.message : "字体列表读取失败");
+    }
+  }
+
+  async function downloadSubtitleFont(fontId: string) {
+    setFontBusy(fontId);
+    setFontMessage("");
+    try {
+      const response = await fetch(`/api/mvp/fonts/${fontId}/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const next: FontResponse = await response.json();
+      if (!response.ok || !next.font) throw new Error(next.error || "字体下载失败");
+      setSubtitleFonts(next.fonts);
+      await activateSubtitleFont(next.font);
+      setSubtitleFontId(fontId);
+      setFontMessage(`${next.font.name}已下载，可用于预览和视频合成`);
+    } catch (cause) {
+      setFontMessage(cause instanceof Error ? cause.message : "字体下载失败");
+    } finally {
+      setFontBusy("");
+    }
+  }
+
   function restoreHistory(item: Job) {
     setJob(item);
     if (item.episode) setEpisode(item.episode);
@@ -183,6 +338,23 @@ export default function Home() {
     if (sourceFileInput.current) sourceFileInput.current.value = "";
     setError("");
     setScriptDirty(false);
+    const savedSubtitles = item.creative_config?.subtitles;
+    if (savedSubtitles) {
+      setSubtitleFontId(savedSubtitles.font);
+      setSubtitleSize(savedSubtitles.size);
+    }
+    setSubtitleDirty(false);
+  }
+
+  function updateSubtitleFont(fontId: string) {
+    setSubtitleFontId(fontId);
+    setFontMessage("");
+    if (job?.video_url) setSubtitleDirty(true);
+  }
+
+  function updateSubtitleSize(size: number) {
+    setSubtitleSize(size);
+    if (job?.video_url) setSubtitleDirty(true);
   }
 
   function updateTurn(index: number, changes: Partial<Turn>) {
@@ -283,6 +455,7 @@ export default function Home() {
           characters: selected.map((item) => item.actionId),
           placements,
           voices: chosenVoices.map((voice) => voice.id),
+          subtitles: { font: subtitleFontId, size: subtitleSize },
         },
       } : null;
       const response = await fetch(
@@ -302,6 +475,7 @@ export default function Home() {
             characters: selected.map((item) => item.actionId),
             placements,
             voices: chosenVoices.map((voice) => voice.id),
+            subtitles: { font: subtitleFontId, size: subtitleSize },
           },
         }),
       });
@@ -310,6 +484,10 @@ export default function Home() {
       setEpisode(next.episode ?? { topic: documentBody?.topic || prompt, turns: [] });
       setJob(next);
       setScriptDirty(false);
+      const nextSubtitles = next.creative_config?.subtitles as SubtitleConfig | undefined;
+      setSubtitleDirty(Boolean(next.video_url) && (
+        nextSubtitles?.font !== subtitleFontId || nextSubtitles?.size !== subtitleSize
+      ));
       if (next.reused) void loadHistory();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "播客任务创建失败");
@@ -318,7 +496,13 @@ export default function Home() {
 
   async function generateVideo() {
     if (!job?.id || !job.audio_url || selected.length < 2) return;
+    if (!selectedSubtitleFont?.installed) {
+      setError(`请先下载字幕字体“${selectedSubtitleFont?.name || subtitleFontId}”`);
+      return;
+    }
     setError("");
+    setTrimMessage("");
+    setTrimError(false);
     try {
       const response = await fetch(`/api/mvp/jobs/${job.id}/video`, {
         method: "POST",
@@ -326,11 +510,12 @@ export default function Home() {
         body: JSON.stringify({
           mode: "action",
           episode,
-          force: scriptDirty,
+          force: scriptDirty || subtitleDirty,
           creative_config: {
             background: background.id,
             characters: selected.map((item) => item.actionId),
             placements,
+            subtitles: { font: subtitleFontId, size: subtitleSize },
           },
         }),
       });
@@ -338,8 +523,168 @@ export default function Home() {
       if (!response.ok) throw new Error(next.error || "视频任务创建失败");
       setJob(next);
       setScriptDirty(false);
+      setSubtitleDirty(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "视频任务创建失败");
+    }
+  }
+
+  function seekVideo(value: number) {
+    const video = videoRef.current;
+    const next = Math.max(0, Math.min(value, videoDuration || value));
+    if (video) video.currentTime = next;
+    setPlayhead(next);
+  }
+
+  function loadVideoMetadata(video: HTMLVideoElement) {
+    const duration = Number.isFinite(video.duration) ? video.duration : 0;
+    const saved = job?.video_edit;
+    const savedSegment = saved?.segments?.[0]
+      ?? (typeof saved?.start === "number" && typeof saved.end === "number"
+        ? { start: saved.start, end: saved.end }
+        : null);
+    const start = savedSegment ? Math.min(savedSegment.start, Math.max(0, duration - 0.5)) : 0;
+    const end = savedSegment ? Math.min(savedSegment.end, duration) : duration;
+    setVideoDuration(duration);
+    setTrimStart(start);
+    setTrimEnd(Math.max(start + Math.min(0.5, duration), end));
+    setPlayhead(start);
+  }
+
+  function updateTrimStart(value: number) {
+    const next = Math.max(0, Math.min(value, trimEnd - 0.5));
+    setTrimStart(next);
+    setTrimMessage("");
+    setTrimError(false);
+    seekVideo(next);
+  }
+
+  function updateTrimEnd(value: number) {
+    const next = Math.min(videoDuration, Math.max(value, trimStart + 0.5));
+    setTrimEnd(next);
+    setTrimMessage("");
+    setTrimError(false);
+    seekVideo(next);
+  }
+
+  function setBoundaryFromPlayhead(boundary: "start" | "end") {
+    const current = videoRef.current?.currentTime ?? playhead;
+    if (boundary === "start") updateTrimStart(current);
+    else updateTrimEnd(current);
+  }
+
+  function resetTrim() {
+    setTrimStart(0);
+    setTrimEnd(videoDuration);
+    setTrimMessage("");
+    setTrimError(false);
+    seekVideo(0);
+  }
+
+  function addTrimSegment() {
+    if (!trimReady) return;
+    if (trimSegments.length >= 20) {
+      setTrimError(true);
+      setTrimMessage("一次最多拼接 20 个片段");
+      return;
+    }
+    setTrimSegments((current) => [...current, { start: trimStart, end: trimEnd }]);
+    setTrimError(false);
+    setTrimMessage(`已加入片段 ${formatVideoTime(trimStart)} — ${formatVideoTime(trimEnd)}`);
+  }
+
+  function selectTrimSegment(segment: VideoSegment) {
+    videoRef.current?.pause();
+    setTrimStart(segment.start);
+    setTrimEnd(segment.end);
+    setTrimError(false);
+    setTrimMessage("已在时间轴中选中该片段");
+    seekVideo(segment.start);
+  }
+
+  function moveTrimSegment(index: number, offset: -1 | 1) {
+    setTrimSegments((current) => {
+      const target = index + offset;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+    setTrimMessage("");
+    setTrimError(false);
+  }
+
+  function removeTrimSegment(index: number) {
+    setTrimSegments((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setTrimMessage("");
+    setTrimError(false);
+  }
+
+  function clearTrimSegments() {
+    setTrimSegments([]);
+    setTrimMessage("拼接序列已清空，将直接导出当前选区");
+    setTrimError(false);
+  }
+
+  async function previewTrim() {
+    const video = videoRef.current;
+    if (!video || !trimReady) return;
+    if (!video.paused && video.currentTime >= trimStart && video.currentTime < trimEnd) {
+      video.pause();
+      return;
+    }
+    if (video.currentTime < trimStart || video.currentTime >= trimEnd - 0.05) {
+      video.currentTime = trimStart;
+      setPlayhead(trimStart);
+    }
+    try {
+      await video.play();
+    } catch {
+      setTrimError(true);
+      setTrimMessage("浏览器阻止了自动播放，请直接使用视频播放按钮");
+    }
+  }
+
+  function updateVideoPlayhead(video: HTMLVideoElement) {
+    const current = video.currentTime;
+    setPlayhead(current);
+    if (!video.paused && trimReady && current >= trimEnd) {
+      video.pause();
+      video.currentTime = trimStart;
+      setPlayhead(trimStart);
+    }
+  }
+
+  async function exportVideoEdit() {
+    if (!job?.id || !trimReady || trimBusy) return;
+    setTrimBusy(true);
+    setTrimError(false);
+    setTrimMessage("正在导出剪辑片段，请稍候…");
+    try {
+      const response = await fetch(`/api/mvp/jobs/${job.id}/video/edit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          segments: queuedSegments.map((segment) => ({
+            start: segment.start,
+            end: segment.end,
+          })),
+        }),
+      });
+      const next = await response.json() as Job & { error?: string };
+      if (!response.ok) throw new Error(next.error || "视频剪辑失败");
+      setJob(next);
+      setTrimSegments((next.video_edit?.segments ?? queuedSegments).map((segment) => ({
+        start: segment.start,
+        end: segment.end,
+      })));
+      setTrimMessage(`${queuedSegments.length > 1 ? "拼接视频" : "剪辑片段"}已导出，共 ${formatVideoTime(next.video_edit?.duration ?? trimDuration)}`);
+      void loadHistory();
+    } catch (cause) {
+      setTrimError(true);
+      setTrimMessage(cause instanceof Error ? cause.message : "视频剪辑失败");
+    } finally {
+      setTrimBusy(false);
     }
   }
 
@@ -412,8 +757,17 @@ export default function Home() {
         <section className="preview-column">
           <div className="canvas-wrap">
             <div className="preview-canvas" style={{ "--scene-accent": background.accent } as CSSProperties}>
-              {job?.video_url ? (
-                <video controls autoPlay={false} src={job.video_url}>浏览器不支持视频播放。</video>
+              {videoReady ? (
+                <video
+                  ref={videoRef}
+                  controls
+                  autoPlay={false}
+                  src={job?.video_url}
+                  onLoadedMetadata={(event) => loadVideoMetadata(event.currentTarget)}
+                  onTimeUpdate={(event) => updateVideoPlayhead(event.currentTarget)}
+                  onPlay={() => setTrimPlaying(true)}
+                  onPause={() => setTrimPlaying(false)}
+                >浏览器不支持视频播放。</video>
               ) : (
                 <>
                   <img className="scene-background" src={background.image} alt={background.name} />
@@ -434,6 +788,14 @@ export default function Home() {
                   })}
                   {background.foreground && <img className="scene-foreground" src={background.foreground} alt="场景前景" />}
                   <div className="on-air-pill"><i /> ON AIR</div>
+                  <div
+                    className={`subtitle-preview ${subtitleFontReady ? "" : "font-missing"}`}
+                    title={subtitleFontReady ? "字幕预览" : "下载字体后显示准确预览"}
+                    style={{
+                      fontFamily: selectedSubtitleFont?.family,
+                      fontSize: `clamp(10px, ${(subtitleSize / 19.2).toFixed(3)}cqw, 34px)`,
+                    }}
+                  ><span>{subtitlePreviewText}</span></div>
                 </>
               )}
             </div>
@@ -446,23 +808,75 @@ export default function Home() {
             </article>
             <article className={videoReady ? "done" : videoActive ? "active" : !audioReady ? "locked" : ""}>
               <span className="production-index">2</span>
-              <div className="production-copy"><b>生成视频</b><small>{scriptDirty ? "脚本已修改，将同步更新字幕" : videoReady ? "成片已就绪" : videoWaiting ? "正在等待渲染资源" : videoActive ? `正在合成 · ${videoProgress}%` : audioReady ? "将语音、角色动作与场景合成" : "请先完成语音合成"}</small><progress value={videoProgress} max={100} /></div>
-              <button onClick={generateVideo} disabled={busy || videoReady || !audioReady || selected.length < 2}>{scriptDirty ? "更新字幕并生成" : videoReady ? "视频已生成" : videoWaiting ? "排队中" : videoActive ? "生成中" : "生成视频"}</button>
+              <div className="production-copy"><b>生成视频</b><small>{subtitleDirty ? "字幕字体或字号已修改，将重新合成" : scriptDirty ? "脚本已修改，将同步更新字幕" : videoReady ? "成片已就绪" : videoWaiting ? "正在等待渲染资源" : videoActive ? `正在合成 · ${videoProgress}%` : audioReady ? "将语音、角色动作、字幕与场景合成" : "请先完成语音合成"}</small><progress value={videoProgress} max={100} /></div>
+              <button
+                className={`video-generate-button ${videoWaiting || videoActive ? "is-rendering" : videoReady ? "is-complete" : ""}`}
+                onClick={generateVideo}
+                disabled={busy || videoReady || !audioReady || selected.length < 2 || !subtitleFontReady}
+                aria-live="polite"
+              >
+                <span className="video-button-orbit" aria-hidden="true"><i /></span>
+                <span className="video-button-label">{videoButtonLabel}</span>
+                <span className="video-button-sheen" aria-hidden="true" />
+              </button>
             </article>
           </div>
 
-          <div className="timeline-panel">
-            <div className="ruler"><span>00:00</span><span>00:30</span><span>01:00</span><span>01:30</span><span>02:00</span></div>
-            {(["HostA", "HostB"] as Speaker[]).map((speaker) => (
-              <div className={`timeline-track ${speaker === "HostB" ? "purple" : ""}`} key={speaker}>
-                <b><i />{speaker === "HostA" ? "Host A" : "Host B"}<small>VOICE</small></b>
-                <div>{episode.turns.map((turn, index) => turn.speaker === speaker ? <span key={index} style={{ width: `${Math.min(27, Math.max(9, turn.text.length * .55))}%` }}><Wave color={speaker === "HostA" ? "#4f82ff" : "#865cff"} /></span> : <em key={index} />)}</div>
+          <section className={`video-editor ${videoReady ? "" : "locked"}`} aria-label="视频裁剪与拼接">
+            <header>
+              <span><b>视频裁剪与拼接</b><small>{videoReady ? "选择范围加入序列，再按顺序拼接导出" : "生成视频后可裁剪、排序并拼接片段"}</small></span>
+              <output>{formatVideoTime(trimStart)} — {formatVideoTime(trimEnd)}</output>
+            </header>
+            <div className="trim-toolbar">
+              <button onClick={() => void previewTrim()} disabled={!trimReady}>{trimPlaying ? "Ⅱ 暂停" : "▶ 预览选区"}</button>
+              <button onClick={() => setBoundaryFromPlayhead("start")} disabled={!trimReady}>设当前为入点</button>
+              <button onClick={() => setBoundaryFromPlayhead("end")} disabled={!trimReady}>设当前为出点</button>
+              <button onClick={resetTrim} disabled={!trimReady}>重置</button>
+              <button className="add-segment" onClick={addTrimSegment} disabled={!trimReady || trimSegments.length >= 20}>＋ 加入拼接序列</button>
+            </div>
+            <div
+              className="trim-timeline"
+              style={{
+                "--trim-start": `${videoDuration ? (trimStart / videoDuration) * 100 : 0}%`,
+                "--trim-end": `${videoDuration ? (trimEnd / videoDuration) * 100 : 100}%`,
+                "--playhead": `${videoDuration ? (playhead / videoDuration) * 100 : 0}%`,
+              } as CSSProperties}
+            >
+              <div className="trim-thumbnails" aria-hidden="true">
+                {[0, 1, 2, 3, 4, 5].map((item) => <span key={item}><img src={background.thumbnail ?? background.image} alt="" /></span>)}
               </div>
-            ))}
-            <div className="camera-track"><b>▣<small>SCENE</small></b><div>{[0, 1, 2].map((item) => <span key={item}><img src={background.thumbnail ?? background.image} alt="" /></span>)}</div></div>
-          </div>
+              <div className="trim-shade before" aria-hidden="true" />
+              <div className="trim-shade after" aria-hidden="true" />
+              <div className="trim-selection" aria-hidden="true" />
+              <i className="trim-playhead" aria-hidden="true" />
+              <label className="trim-handle start">
+                <span>入点</span>
+                <input type="range" min="0" max={videoDuration || 0} step="0.1" value={trimStart} onChange={(event) => updateTrimStart(Number(event.target.value))} disabled={!videoReady || !videoDuration} aria-label="剪辑入点" />
+              </label>
+              <label className="trim-handle end">
+                <span>出点</span>
+                <input type="range" min="0" max={videoDuration || 0} step="0.1" value={trimEnd} onChange={(event) => updateTrimEnd(Number(event.target.value))} disabled={!videoReady || !videoDuration} aria-label="剪辑出点" />
+              </label>
+            </div>
+            <div className="trim-ruler"><span>00:00.0</span><span>保留 {formatVideoTime(trimDuration)}</span><span>{formatVideoTime(videoDuration)}</span></div>
+            <div className="clip-sequence" aria-label="视频拼接序列">
+              <b>拼接序列 <small>{trimSegments.length ? `${trimSegments.length} 段 · ${formatVideoTime(sequenceDuration)}` : "未添加时直接导出当前选区"}</small></b>
+              <div>
+                {trimSegments.map((segment, index) => <article key={`${segment.start}-${segment.end}-${index}`}>
+                  <button className="clip-select" onClick={() => selectTrimSegment(segment)} title="在预览中定位此片段"><i>{index + 1}</i><span>{formatVideoTime(segment.start)}–{formatVideoTime(segment.end)}</span></button>
+                  <span className="clip-actions"><button onClick={() => moveTrimSegment(index, -1)} disabled={index === 0} aria-label={`片段 ${index + 1} 前移`}>←</button><button onClick={() => moveTrimSegment(index, 1)} disabled={index === trimSegments.length - 1} aria-label={`片段 ${index + 1} 后移`}>→</button><button onClick={() => removeTrimSegment(index)} aria-label={`删除片段 ${index + 1}`}>×</button></span>
+                </article>)}
+                {!trimSegments.length && <p>拖动时间轴选择范围，然后点击“加入拼接序列”</p>}
+              </div>
+              {trimSegments.length > 0 && <button className="clear-sequence" onClick={clearTrimSegments}>清空</button>}
+            </div>
+            <footer>
+              <p className={trimError ? "error" : ""}>{trimMessage || (videoReady ? "序列为空时导出当前选区；有多个片段时按顺序拼接" : "等待视频生成完成")}</p>
+              <div>{job?.edited_video_url && <a href={job.edited_video_url} download>下载已导出视频</a>}<button onClick={() => void exportVideoEdit()} disabled={!trimReady || trimBusy || (!editDirty && Boolean(job?.edited_video_url))}>{trimBusy ? "导出中…" : !editDirty && job?.edited_video_url ? "已导出" : trimSegments.length > 1 ? "拼接并导出" : "裁剪并导出"}</button></div>
+            </footer>
+          </section>
 
-          {(error || job?.error || audioReady || videoReady) && <div className={`result-links ${error || job?.error ? "has-error" : ""}`}><b>{error || job?.error || (videoReady ? "视频已生成" : job?.reused ? "已复用历史结果，未重复调用付费接口" : "切片文本与音频已生成，可继续生成视频")}</b><span>{job?.audio_url && <a href={job.audio_url}>播放完整音频</a>}{job?.provider_audio_url && <a href={job.provider_audio_url}>服务端音频</a>}{job?.video_url && <a href={job.video_url}>下载视频</a>}</span></div>}
+          {(error || job?.error || audioReady || videoReady) && <div className={`result-links ${error || job?.error ? "has-error" : ""}`}><b>{error || job?.error || (videoReady ? "视频已生成" : job?.reused ? "已复用历史结果，未重复调用付费接口" : "切片文本与音频已生成，可继续生成视频")}</b><span>{job?.audio_url && <a href={job.audio_url} target="_blank" rel="noreferrer">播放完整音频</a>}{job?.provider_audio_url && <a href={job.provider_audio_url} download="blabber-podcast.mp3">下载音频</a>}{job?.video_url && <a href={job.video_url}>下载视频</a>}{job?.edited_video_url && <a href={job.edited_video_url} download>下载剪辑片段</a>}</span></div>}
         </section>
 
         <aside className="assets-column">
@@ -499,6 +913,27 @@ export default function Home() {
                   <div>{voice && <button className="selected" disabled><i style={{ borderColor: voice.color, color: voice.color }}>▶</i><span><b>{voice.name}</b><small>{voice.note} · 随角色自动匹配</small></span><Wave color={voice.color} /></button>}</div>
                 </div>;
               })}
+            </section>
+
+            <section className="asset-section subtitle-controls" aria-label="字幕预览设置">
+              <div className="section-title"><span><b>字</b>字幕预览</span><small>画面实时更新</small></div>
+              <label className="subtitle-font-control">
+                <span>字体</span>
+                <select value={subtitleFontId} onChange={(event) => updateSubtitleFont(event.target.value)} aria-label="字幕字体">
+                  {subtitleFonts.map((font) => <option value={font.id} key={font.id}>{font.name}{font.installed ? "" : "（需下载）"}</option>)}
+                </select>
+              </label>
+              {!subtitleFontReady && selectedSubtitleFont?.downloadable && <button
+                className="download-font"
+                onClick={() => void downloadSubtitleFont(selectedSubtitleFont.id)}
+                disabled={Boolean(fontBusy)}
+              >{fontBusy === selectedSubtitleFont.id ? "正在下载…" : `下载 ${selectedSubtitleFont.name}${selectedSubtitleFont.size_mb ? ` · ${selectedSubtitleFont.size_mb}MB` : ""}`}</button>}
+              <label className="subtitle-size-control">
+                <span>大小</span>
+                <input type="range" min="28" max="88" step="1" value={subtitleSize} onChange={(event) => updateSubtitleSize(Number(event.target.value))} aria-label="字幕大小" />
+                <output>{subtitleSize}px</output>
+              </label>
+              <p className={fontMessage.includes("失败") ? "font-message error" : "font-message"}>{fontMessage || (subtitleFontReady ? "当前字体可用于预览和视频合成。" : "此字体尚未下载，预览暂用系统字体。")}</p>
             </section>
           </div>
         </aside>

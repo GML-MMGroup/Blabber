@@ -19,9 +19,11 @@ import zipfile
 from dataclasses import asdict
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from math import ceil
+from math import ceil, isfinite
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urlparse
+from urllib.request import Request, urlopen
 
 from pypdf import PdfReader
 
@@ -46,6 +48,38 @@ OPEN_NOTEBOOK_ROOT = PROJECT_ROOT / "open-notebook"
 OPEN_NOTEBOOK_ENV_PATH = OPEN_NOTEBOOK_ROOT / ".env"
 OPEN_NOTEBOOK_COMPOSE_PATH = OPEN_NOTEBOOK_ROOT / "docker-compose.yml"
 HISTORY_PATH = OUTPUT_ROOT / "jobs-history.json"
+SUBTITLE_FONT_DIR = MVP_ROOT / "fonts"
+SUBTITLE_FONT_DOWNLOAD_LIMIT = 40 * 1024 * 1024
+SUBTITLE_FONT_CATALOG = {
+    "system": {
+        "name": "本机中文字体",
+        "family": '"PingFang SC", "Microsoft YaHei", sans-serif',
+        "size_mb": None,
+    },
+    "noto-sans-sc": {
+        "name": "思源黑体",
+        "face_family": "Blabber Noto Sans SC",
+        "family": '"Blabber Noto Sans SC", "Noto Sans CJK SC", sans-serif',
+        "filename": "NotoSansCJKsc-Regular.otf",
+        "url": (
+            "https://raw.githubusercontent.com/notofonts/noto-cjk/main/"
+            "Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf"
+        ),
+        "size_mb": 15.7,
+    },
+    "noto-serif-sc": {
+        "name": "思源宋体",
+        "face_family": "Blabber Noto Serif SC",
+        "family": '"Blabber Noto Serif SC", "Noto Serif CJK SC", serif',
+        "filename": "NotoSerifCJKsc-Regular.otf",
+        "url": (
+            "https://raw.githubusercontent.com/notofonts/noto-cjk/main/"
+            "Serif/OTF/SimplifiedChinese/NotoSerifCJKsc-Regular.otf"
+        ),
+        "size_mb": 18.0,
+    },
+}
+SUBTITLE_FONT_DOWNLOAD_LOCK = threading.Lock()
 
 ENV_CONFIG_FIELDS = (
     {"key": "VOLCENGINE_SPEECH_APP_ID", "group": "豆包语音 PodcastTTS", "label": "App ID", "default": "", "help": "在豆包语音控制台的应用管理中获取。"},
@@ -231,20 +265,23 @@ PORT = int(float(os.getenv("MVP_PORT", "8787")))
 JOBS: dict[str, dict] = {}
 JOBS_LOCK = threading.Lock()
 VIDEO_RENDER_LOCK = threading.Lock()
+VIDEO_EDIT_LOCK = threading.Lock()
 
-ACTION_CHARACTERS = {"dog", "duck"}
+# PodcastTTS supports stock TTS 1.0/2.0 voices. Keep the character catalog on
+# the same 2.0 Uranus family so arbitrary two-character pairings stay coherent.
 ACTION_CHARACTER_SPEAKER_IDS = {
-    "dog": "zh_male_dayixiansheng_v2_saturn_bigtts",
-    "duck": "zh_female_mizaitongxue_v2_saturn_bigtts",
+    "duck": "zh_female_qiaopinv_uranus_bigtts",
+    "dog": "zh_male_wennuanahu_uranus_bigtts",
 }
+ACTION_CHARACTERS = frozenset(ACTION_CHARACTER_SPEAKER_IDS)
 ACTION_CHARACTER_VOICE_PROMPTS = {
     "dog": (
-        "青年男性卡通角色，普通话标准，声音阳光清朗、热情有活力；"
-        "语气忠诚友善又略带顽皮，节奏轻快，像幽默亲切的年轻播客主持人。"
+        "青年男性拟人卡通角色，普通话标准，声音阳光温暖、热情有活力；"
+        "语气友善又略带顽皮，节奏轻快，具有亲和力。"
     ),
     "duck": (
-        "青年女性卡通角色，普通话标准，声音清脆明亮、机灵俏皮；"
-        "语气自信活泼，带自然笑意，吐字清楚，像反应敏捷的年轻播客主持人。"
+        "青年感拟人卡通角色，普通话标准，声音清脆明亮、机灵俏皮；"
+        "语气自信活泼，带自然笑意，吐字清楚，节奏轻快。"
     ),
 }
 ACTION_SCENES = {
@@ -261,6 +298,101 @@ def _clamp_number(value, minimum: float, maximum: float, fallback: float) -> flo
         return min(maximum, max(minimum, float(value)))
     except (TypeError, ValueError):
         return fallback
+
+
+def _font_file_is_valid(path: Path) -> bool:
+    if not path.is_file() or not 100_000 <= path.stat().st_size <= SUBTITLE_FONT_DOWNLOAD_LIMIT:
+        return False
+    try:
+        with path.open("rb") as file:
+            signature = file.read(4)
+    except OSError:
+        return False
+    return signature in {b"OTTO", b"ttcf", b"\x00\x01\x00\x00"}
+
+
+def _system_subtitle_font_path() -> Path | None:
+    candidates = [
+        Path(DEFAULT_SUBTITLE_FONT),
+        Path("/System/Library/Fonts/PingFang.ttc"),
+        Path(os.getenv("WINDIR", "C:/Windows")) / "Fonts" / "msyh.ttc",
+        Path(os.getenv("WINDIR", "C:/Windows")) / "Fonts" / "msyhbd.ttc",
+        Path(os.getenv("WINDIR", "C:/Windows")) / "Fonts" / "simhei.ttf",
+        Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+        Path("/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf"),
+        Path("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"),
+    ]
+    return next((path for path in candidates if path.is_file()), None)
+
+
+def _subtitle_font_path(font_id: str) -> Path | None:
+    if font_id == "system":
+        return _system_subtitle_font_path()
+    font = SUBTITLE_FONT_CATALOG.get(font_id)
+    if not font or not font.get("filename"):
+        return None
+    path = SUBTITLE_FONT_DIR / str(font["filename"])
+    return path if _font_file_is_valid(path) else None
+
+
+def _font_public_info(font_id: str) -> dict:
+    font = SUBTITLE_FONT_CATALOG[font_id]
+    path = _subtitle_font_path(font_id)
+    return {
+        "id": font_id,
+        "name": font["name"],
+        "family": font["family"],
+        "face_family": font.get("face_family"),
+        "installed": path is not None,
+        "downloadable": bool(font.get("url")),
+        "size_mb": font.get("size_mb"),
+        "preview_url": _media_url(path) if path and font_id != "system" else None,
+    }
+
+
+def _subtitle_fonts_payload() -> dict:
+    fonts = [_font_public_info(font_id) for font_id in SUBTITLE_FONT_CATALOG]
+    default_font = next(
+        (font["id"] for font in fonts if font["installed"]),
+        "noto-sans-sc",
+    )
+    return {"fonts": fonts, "default_font": default_font}
+
+
+def _download_subtitle_font(font_id: str) -> dict:
+    font = SUBTITLE_FONT_CATALOG.get(font_id)
+    if not font or not font.get("url") or not font.get("filename"):
+        raise ValueError("该字幕字体不支持下载")
+    target = SUBTITLE_FONT_DIR / str(font["filename"])
+    with SUBTITLE_FONT_DOWNLOAD_LOCK:
+        if _font_file_is_valid(target):
+            return _font_public_info(font_id)
+        SUBTITLE_FONT_DIR.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix(target.suffix + ".download")
+        temporary.unlink(missing_ok=True)
+        request = Request(
+            str(font["url"]),
+            headers={"User-Agent": "BlabberMVP/1.0"},
+        )
+        try:
+            with urlopen(request, timeout=60) as response, temporary.open("wb") as output:
+                declared_size = int(response.headers.get("Content-Length", "0") or 0)
+                if declared_size > SUBTITLE_FONT_DOWNLOAD_LIMIT:
+                    raise ValueError("字体文件超过 40MB 限制")
+                downloaded = 0
+                while chunk := response.read(1024 * 1024):
+                    downloaded += len(chunk)
+                    if downloaded > SUBTITLE_FONT_DOWNLOAD_LIMIT:
+                        raise ValueError("字体文件超过 40MB 限制")
+                    output.write(chunk)
+            if not _font_file_is_valid(temporary):
+                raise ValueError("下载内容不是有效的字体文件")
+            temporary.replace(target)
+        except (HTTPError, URLError, TimeoutError) as error:
+            raise RuntimeError(f"字体下载失败：{error}") from error
+        finally:
+            temporary.unlink(missing_ok=True)
+    return _font_public_info(font_id)
 
 
 def _normalize_creative_config(raw_config) -> dict:
@@ -292,12 +424,22 @@ def _normalize_creative_config(raw_config) -> dict:
             "y": _clamp_number(source.get("y"), -15, 20, default["y"]),
             "scale": _clamp_number(source.get("scale"), .6, 1.45, default["scale"]),
         })
+    raw_subtitles = raw.get("subtitles")
+    raw_subtitles = raw_subtitles if isinstance(raw_subtitles, dict) else {}
+    subtitle_font = str(raw_subtitles.get("font", "system"))
+    if subtitle_font not in SUBTITLE_FONT_CATALOG:
+        subtitle_font = "system"
+    subtitle_size = round(
+        _clamp_number(raw_subtitles.get("size"), 28, 88, 48)
+    )
+
     return {
         "background": background,
         "characters": characters,
         "placements": placements,
         "scene": str(raw.get("scene", "balanced"))[:40],
         "voices": raw.get("voices", []),
+        "subtitles": {"font": subtitle_font, "size": subtitle_size},
     }
 
 
@@ -314,6 +456,11 @@ def _compose_action_episode_video(
     progress_callback=None,
 ) -> Path:
     config = _normalize_creative_config(creative_config)
+    subtitle_config = config["subtitles"]
+    subtitle_font = _subtitle_font_path(subtitle_config["font"])
+    if subtitle_font is None:
+        font_name = SUBTITLE_FONT_CATALOG[subtitle_config["font"]]["name"]
+        raise RuntimeError(f"字幕字体“{font_name}”尚未安装，请先在字幕预览中下载")
     scene = ACTION_SCENES[config["background"]]
     placements = config["placements"]
     sizes = [round(700 * placement["scale"]) for placement in placements]
@@ -341,8 +488,8 @@ def _compose_action_episode_video(
             subtitles=True,
             subtitle_script=None,
             subtitle_srt=None,
-            subtitle_font=DEFAULT_SUBTITLE_FONT,
-            subtitle_font_size=48,
+            subtitle_font=subtitle_font,
+            subtitle_font_size=subtitle_config["size"],
             subtitle_max_chars=22,
             subtitle_margin_bottom=150,
             audio_speed=1.0,
@@ -384,9 +531,9 @@ def _media_url(path: Path) -> str:
     return f"/mvp-media/{path.resolve().relative_to(MVP_ROOT).as_posix()}"
 
 
-def _is_playable_video(path: Path | None) -> bool:
+def _video_duration(path: Path | None) -> float:
     if path is None or not path.is_file() or path.stat().st_size < 10_000:
-        return False
+        return 0.0
     try:
         probe = subprocess.run(
             [
@@ -396,10 +543,182 @@ def _is_playable_video(path: Path | None) -> bool:
             capture_output=True,
             text=True,
             timeout=15,
+            check=False,
         )
-        return probe.returncode == 0 and float(probe.stdout.strip()) > 0
+        duration = float(probe.stdout.strip()) if probe.returncode == 0 else 0.0
+        return duration if isfinite(duration) and duration > 0 else 0.0
     except (OSError, subprocess.SubprocessError, ValueError):
-        return False
+        return 0.0
+
+
+def _is_playable_video(path: Path | None) -> bool:
+    return _video_duration(path) > 0
+
+
+def _trim_video(
+    source: Path,
+    output_dir: Path,
+    start: float,
+    end: float,
+) -> tuple[Path, dict]:
+    source_duration = _video_duration(source)
+    if source_duration <= 0:
+        raise RuntimeError("原视频无法读取或时长无效")
+    if not all(isfinite(value) for value in (start, end)):
+        raise ValueError("剪辑时间必须是有效数字")
+    start = round(max(0.0, min(start, source_duration)), 3)
+    end = round(max(0.0, min(end, source_duration)), 3)
+    if end - start < 0.5:
+        raise ValueError("剪辑片段不能短于 0.5 秒")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output = output_dir / (
+        f"clip-{round(start * 1000):09d}-{round(end * 1000):09d}.mp4"
+    )
+    edit = {
+        "start": start,
+        "end": end,
+        "duration": round(end - start, 3),
+        "source_duration": round(source_duration, 3),
+    }
+    if _is_playable_video(output):
+        return output, edit
+
+    temporary = output.with_name(
+        f".{output.stem}-{uuid.uuid4().hex[:8]}.rendering.mp4"
+    )
+    try:
+        completed = subprocess.run(
+            [
+                "ffmpeg", "-y", "-v", "error",
+                "-ss", f"{start:.3f}", "-i", str(source),
+                "-t", f"{end - start:.3f}",
+                "-map", "0:v:0?", "-map", "0:a:0?",
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                "-c:a", "aac", "-b:a", "192k",
+                "-movflags", "+faststart", str(temporary),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=max(120, min(1800, round((end - start) * 8 + 60))),
+            check=False,
+        )
+        if completed.returncode or not _is_playable_video(temporary):
+            detail = (completed.stderr or completed.stdout).strip()[-1000:]
+            raise RuntimeError(
+                f"视频剪辑失败：{detail or 'FFmpeg 未生成有效文件'}"
+            )
+        temporary.replace(output)
+        return output, edit
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("视频剪辑超时，请缩短片段后重试") from error
+    except OSError as error:
+        raise RuntimeError(f"视频剪辑工具不可用：{error}") from error
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _edit_video(
+    source: Path,
+    output_dir: Path,
+    raw_segments,
+) -> tuple[Path, dict]:
+    source_duration = _video_duration(source)
+    if source_duration <= 0:
+        raise RuntimeError("原视频无法读取或时长无效")
+    if not isinstance(raw_segments, list) or not raw_segments:
+        raise ValueError("请至少添加一个剪辑片段")
+    if len(raw_segments) > 20:
+        raise ValueError("一次最多拼接 20 个片段")
+
+    segments = []
+    for index, raw_segment in enumerate(raw_segments):
+        if not isinstance(raw_segment, dict):
+            raise ValueError(f"第 {index + 1} 个片段格式无效")
+        raw_start = raw_segment.get("start")
+        raw_end = raw_segment.get("end")
+        if (
+            isinstance(raw_start, bool)
+            or isinstance(raw_end, bool)
+            or not isinstance(raw_start, (int, float))
+            or not isinstance(raw_end, (int, float))
+        ):
+            raise ValueError(f"第 {index + 1} 个片段的入点和出点必须是数字")
+        start = round(max(0.0, min(float(raw_start), source_duration)), 3)
+        end = round(max(0.0, min(float(raw_end), source_duration)), 3)
+        if not isfinite(start) or not isfinite(end):
+            raise ValueError(f"第 {index + 1} 个片段时间无效")
+        if end - start < 0.5:
+            raise ValueError(f"第 {index + 1} 个片段不能短于 0.5 秒")
+        segments.append({
+            "start": start,
+            "end": end,
+            "duration": round(end - start, 3),
+        })
+
+    rendered_segments = []
+    for segment in segments:
+        rendered, _ = _trim_video(
+            source,
+            output_dir / "segments",
+            segment["start"],
+            segment["end"],
+        )
+        rendered_segments.append(rendered)
+
+    edit = {
+        "segments": segments,
+        "duration": round(sum(segment["duration"] for segment in segments), 3),
+        "source_duration": round(source_duration, 3),
+    }
+    if len(segments) == 1:
+        edit.update({"start": segments[0]["start"], "end": segments[0]["end"]})
+        return rendered_segments[0], edit
+
+    signature = hashlib.sha256(
+        json.dumps(segments, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()[:16]
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output = output_dir / f"sequence-{signature}.mp4"
+    if _is_playable_video(output):
+        return output, edit
+
+    manifest = output_dir / f".{output.stem}.ffconcat"
+    temporary = output_dir / f".{output.stem}-{uuid.uuid4().hex[:8]}.rendering.mp4"
+    manifest.write_text(
+        "ffconcat version 1.0\n"
+        + "".join(
+            f"file '{str(path).replace(chr(39), chr(39) + chr(92) + chr(39) + chr(39))}'\n"
+            for path in rendered_segments
+        ),
+        encoding="utf-8",
+    )
+    try:
+        completed = subprocess.run(
+            [
+                "ffmpeg", "-y", "-v", "error",
+                "-f", "concat", "-safe", "0", "-i", str(manifest),
+                "-c", "copy", "-movflags", "+faststart", str(temporary),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=max(120, min(1800, round(edit["duration"] * 2 + 60))),
+            check=False,
+        )
+        if completed.returncode or not _is_playable_video(temporary):
+            detail = (completed.stderr or completed.stdout).strip()[-1000:]
+            raise RuntimeError(
+                f"视频拼接失败：{detail or 'FFmpeg 未生成有效文件'}"
+            )
+        temporary.replace(output)
+        return output, edit
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("视频拼接超时，请减少片段后重试") from error
+    except OSError as error:
+        raise RuntimeError(f"视频拼接工具不可用：{error}") from error
+    finally:
+        temporary.unlink(missing_ok=True)
+        manifest.unlink(missing_ok=True)
 
 
 def _existing_video_path(job: dict, run_dir: Path) -> Path | None:
@@ -494,6 +813,8 @@ def _sync_edited_script(job: dict, run_dir: Path, raw_episode) -> bool:
         episode=normalized,
         clips=updated_clips,
         video_url=None,
+        edited_video_url=None,
+        video_edit=None,
         subtitle_script_synced=True,
     )
     return True
@@ -545,6 +866,11 @@ def _load_job_history() -> None:
             _safe_media_path(str(record["video_url"]))
         ):
             record.pop("video_url", None)
+        if record.get("edited_video_url") and not _is_playable_video(
+            _safe_media_path(str(record["edited_video_url"]))
+        ):
+            record.pop("edited_video_url", None)
+            record.pop("video_edit", None)
         if record.get("status") in {"queued", "running"}:
             record.update({
                 "status": "failed",
@@ -888,14 +1214,14 @@ def _generate_video(
 ) -> None:
     try:
         _update_job(
-            job_id, status="queued", stage="video_waiting", completed=0, total=2,
+            job_id, status="queued", stage="video_waiting", completed=0, total=1,
             error=None,
         )
         print(f"[视频任务 {job_id}] 正在等待渲染资源", flush=True)
         with VIDEO_RENDER_LOCK:
             print(f"[视频任务 {job_id}] 已启动，工程目录: {run_dir}", flush=True)
             _update_job(
-                job_id, status="running", stage="video", completed=1, total=2,
+                job_id, status="running", stage="video_prepare", completed=0, total=1,
                 error=None,
             )
             if mode == "action":
@@ -920,9 +1246,11 @@ def _generate_video(
             job_id,
             status="complete",
             stage="video_complete",
-            completed=2,
-            total=2,
+            completed=1,
+            total=1,
             video_url=_media_url(final_path),
+            edited_video_url=None,
+            video_edit=None,
         )
         print(f"[视频任务 {job_id}] 已完成: {final_path}", flush=True)
     except Exception as error:
@@ -988,12 +1316,16 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, _public_environment())
             return
 
+        if path == "/api/mvp/fonts":
+            self._json(200, _subtitle_fonts_payload())
+            return
+
         if path == "/api/mvp/health":
             demo_dir = OUTPUT_ROOT / "20260724-115351"
             notebook_url = os.getenv("OPEN_NOTEBOOK_URL", "").strip()
             self._json(200, {
                 "ok": True,
-                "features": ["script", "podcast-document", "tts", "image-voice", "audio", "character-track", "fast-video", "action-video", "video-generate", "video-demo"],
+                "features": ["script", "podcast-document", "tts", "image-voice", "audio", "character-track", "fast-video", "action-video", "subtitle-preview", "font-download", "video-generate", "video-trim", "video-concat", "video-demo"],
                 "script_generator": "open-notebook" if notebook_url else "mock",
                 "open_notebook_configured": bool(notebook_url),
                 "tts_engine": (
@@ -1083,17 +1415,50 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(404, {"error": "文件不存在"})
                 return
             size = media_path.stat().st_size
-            self.send_response(200)
+            start = 0
+            end = size - 1
+            status = 200
+            range_header = self.headers.get("Range", "").strip()
+            if range_header:
+                match = re.fullmatch(r"bytes=(\d*)-(\d*)", range_header)
+                if match:
+                    raw_start, raw_end = match.groups()
+                    if raw_start:
+                        start = int(raw_start)
+                        end = min(int(raw_end), size - 1) if raw_end else size - 1
+                    elif raw_end:
+                        suffix_size = min(int(raw_end), size)
+                        start = size - suffix_size
+                    if 0 <= start <= end < size:
+                        status = 206
+                    else:
+                        match = None
+                if not match:
+                    self.send_response(416)
+                    self._cors()
+                    self.send_header("Content-Range", f"bytes */{size}")
+                    self.end_headers()
+                    return
+            content_length = end - start + 1
+            self.send_response(status)
             self._cors()
             self.send_header("Content-Type", mimetypes.guess_type(media_path.name)[0] or "application/octet-stream")
-            self.send_header("Content-Length", str(size))
+            self.send_header("Content-Length", str(content_length))
             self.send_header("Accept-Ranges", "bytes")
+            if status == 206:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
             self.send_header("Cache-Control", "no-store, max-age=0")
             self.end_headers()
             try:
                 with media_path.open("rb") as file:
-                    while chunk := file.read(1024 * 1024):
+                    file.seek(start)
+                    remaining = content_length
+                    while remaining > 0:
+                        chunk = file.read(min(1024 * 1024, remaining))
+                        if not chunk:
+                            break
                         self.wfile.write(chunk)
+                        remaining -= len(chunk)
             except (BrokenPipeError, ConnectionResetError):
                 pass
             return
@@ -1106,6 +1471,23 @@ class Handler(BaseHTTPRequestHandler):
             body = self._body()
         except (json.JSONDecodeError, ValueError):
             self._json(400, {"error": "请求内容不是有效 JSON"})
+            return
+
+        font_download_match = re.fullmatch(
+            r"/api/mvp/fonts/([a-z0-9-]+)/download", path
+        )
+        if font_download_match:
+            try:
+                font = _download_subtitle_font(font_download_match.group(1))
+            except ValueError as error:
+                self._json(400, {"error": str(error)})
+                return
+            except (OSError, RuntimeError) as error:
+                self._json(502, {"error": str(error)})
+                return
+            payload = _subtitle_fonts_payload()
+            payload["font"] = font
+            self._json(200, payload)
             return
 
         if path == "/api/mvp/config":
@@ -1189,6 +1571,64 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        video_edit_match = re.fullmatch(
+            r"/api/mvp/jobs/([^/]+)/video/(trim|edit)", path
+        )
+        if video_edit_match:
+            job_id = video_edit_match.group(1)
+            with JOBS_LOCK:
+                job = JOBS.get(job_id)
+                run_dir = (
+                    Path(job["run_dir"])
+                    if job and job.get("run_dir")
+                    else None
+                )
+            if job is None:
+                self._json(404, {"error": "任务不存在"})
+                return
+            if run_dir is None:
+                self._json(409, {"error": "任务没有可用的视频工程"})
+                return
+            if (
+                str(job.get("stage", "")).startswith("video")
+                and job.get("status") in {"queued", "running"}
+            ):
+                self._json(409, {"error": "请等待视频生成完成后再剪辑"})
+                return
+            source = _existing_video_path(job, run_dir)
+            if source is None:
+                self._json(409, {"error": "请先生成视频"})
+                return
+            raw_segments = body.get("segments")
+            if video_edit_match.group(2) == "trim":
+                raw_segments = [{
+                    "start": body.get("start"),
+                    "end": body.get("end"),
+                }]
+            try:
+                with VIDEO_EDIT_LOCK:
+                    output, edit = _edit_video(
+                        source,
+                        run_dir / "video_edits",
+                        raw_segments,
+                    )
+            except ValueError as error:
+                self._json(400, {"error": str(error)})
+                return
+            except RuntimeError as error:
+                self._json(502, {"error": str(error)})
+                return
+            _update_job(
+                job_id,
+                edited_video_url=_media_url(output),
+                video_edit=edit,
+                error=None,
+            )
+            with JOBS_LOCK:
+                payload = _public_job(JOBS[job_id])
+            self._json(200, payload)
+            return
+
         if path.startswith("/api/mvp/jobs/") and path.endswith("/character-track"):
             job_id = path.split("/")[-2]
             with JOBS_LOCK:
@@ -1236,18 +1676,30 @@ class Handler(BaseHTTPRequestHandler):
             except (OSError, ValueError) as error:
                 self._json(400, {"error": str(error)})
                 return
+            creative_config = _normalize_creative_config(
+                body.get("creative_config", job.get("creative_config"))
+            )
+            previous_creative_config = _normalize_creative_config(
+                job.get("creative_config")
+            )
+            video_config_keys = ("background", "characters", "placements", "subtitles")
+            creative_changed = any(
+                creative_config[key] != previous_creative_config[key]
+                for key in video_config_keys
+            )
             existing_video = _existing_video_path(job, run_dir)
             if (
                 existing_video is not None
                 and not bool(body.get("force"))
                 and not script_changed
+                and not creative_changed
             ):
                 _update_job(
                     job_id,
                     status="complete",
                     stage="video_complete",
-                    completed=2,
-                    total=2,
+                    completed=1,
+                    total=1,
                     video_url=_media_url(existing_video),
                     error=None,
                 )
@@ -1266,20 +1718,27 @@ class Handler(BaseHTTPRequestHandler):
             ):
                 self._json(503, {"error": "Wav2Lip 推理脚本或模型权重不可用"})
                 return
+            if mode == "action":
+                subtitle_config = creative_config["subtitles"]
+                if _subtitle_font_path(subtitle_config["font"]) is None:
+                    font_name = SUBTITLE_FONT_CATALOG[subtitle_config["font"]]["name"]
+                    self._json(409, {
+                        "error": f"字幕字体“{font_name}”尚未安装，请先下载",
+                    })
+                    return
             character_set = str(
                 job.get("character_set", DEFAULT_CHARACTER_SET)
-            )
-            creative_config = _normalize_creative_config(
-                body.get("creative_config", job.get("creative_config"))
             )
             _update_job(
                 job_id,
                 status="queued",
                 stage="video_queued",
                 completed=0,
-                total=2,
+                total=1,
                 creative_config=creative_config,
-                video_url=None if script_changed or bool(body.get("force")) else job.get("video_url"),
+                video_url=None if script_changed or creative_changed or bool(body.get("force")) else job.get("video_url"),
+                edited_video_url=None,
+                video_edit=None,
                 error=None,
             )
             print(f"[视频任务 {job_id}] 已进入队列（{mode}）", flush=True)
