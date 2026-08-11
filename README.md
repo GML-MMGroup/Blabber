@@ -184,7 +184,7 @@ Enter a topic or select a document, then click **Generate script and audio**. On
 
 ## 🚀 Production deployment
 
-The `site/` directory is configured for OpenAI Sites. From that directory, run `npm ci` and `npm test` before publishing through Sites. The checked-in `.openai/hosting.json` identifies the existing Sites project; do not replace its `project_id`.
+The `site/` directory is configured for OpenAI Sites. From that directory, run `npm ci` and `npm test` before publishing through Sites. The checked-in `.openai/hosting.json` identifies the existing Sites project; do not replace its `project_id`. Keep each tracked static asset below 10 MB; optimize oversized images before publishing, or the Sites source push may be rejected.
 
 Sites publishes the web UI and its Worker only. The Python service in `mvp/` performs PodcastTTS calls, media persistence, FFmpeg processing, and MP4 rendering, and is **not** included in the Sites deployment. The development proxy in `site/vite.config.ts` forwards `/api/mvp` and `/mvp-media` to `127.0.0.1:8787` only while running locally. A functional public deployment therefore requires a separately hosted Python backend plus a production reverse proxy (or equivalent same-origin routing) for those two paths. Never expose `mvp/.env` or put API credentials in frontend environment variables.
 
