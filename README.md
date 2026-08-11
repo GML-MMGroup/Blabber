@@ -155,6 +155,8 @@ npm ci
 On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` and create
 the configuration file with `Copy-Item mvp/.env.example mvp/.env`.
 
+If PowerShell blocks `npm.ps1` because of its execution policy, use `npm.cmd` for the documented npm commands (for example, `npm.cmd ci` and `npm.cmd run dev`). Verify the prerequisites before setup with `node --version`, `python --version`, `ffmpeg -version`, and `ffprobe -version`.
+
 The web UI uses Volcengine PodcastTTS to return two-host dialogue slices, per-slice MP3 files, and the complete MP3 in one API request, ready for MP4 generation. After setup, start the two local services in separate terminals.
 
 Terminal 1 — backend:
@@ -177,6 +179,14 @@ npm run dev
 Open the local URL printed in the terminal (normally `http://localhost:3000`). Configure the Doubao Speech PodcastTTS App ID and Access Token under service settings. To use Seedream or Seedance, additionally run `python -m pip install -r mvp/requirements-ark.txt` and set the optional `ARK_API_KEY` in `mvp/.env`. This credential file is ignored by Git and must not be committed.
 
 Enter a topic or select a document, then click **Generate script and audio**. Once audio is ready, continue with MP4 generation using the bundled Gaga and Awang characters in the Zoo scene.
+
+---
+
+## 🚀 Production deployment
+
+The `site/` directory is configured for OpenAI Sites. From that directory, run `npm ci` and `npm test` before publishing through Sites. The checked-in `.openai/hosting.json` identifies the existing Sites project; do not replace its `project_id`.
+
+Sites publishes the web UI and its Worker only. The Python service in `mvp/` performs PodcastTTS calls, media persistence, FFmpeg processing, and MP4 rendering, and is **not** included in the Sites deployment. The development proxy in `site/vite.config.ts` forwards `/api/mvp` and `/mvp-media` to `127.0.0.1:8787` only while running locally. A functional public deployment therefore requires a separately hosted Python backend plus a production reverse proxy (or equivalent same-origin routing) for those two paths. Never expose `mvp/.env` or put API credentials in frontend environment variables.
 
 ---
 

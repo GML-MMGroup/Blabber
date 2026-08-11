@@ -153,6 +153,8 @@ npm ci
 Windows PowerShell 使用 `.venv\Scripts\Activate.ps1` 激活虚拟环境，并用
 `Copy-Item mvp/.env.example mvp/.env` 创建配置文件。
 
+如果 PowerShell 的执行策略阻止运行 `npm.ps1`，请将文档中的 npm 命令改用 `npm.cmd`（例如 `npm.cmd ci`、`npm.cmd run dev`）。安装前可分别执行 `node --version`、`python --version`、`ffmpeg -version` 和 `ffprobe -version` 验证依赖是否已加入 `PATH`。
+
 网页已接入火山引擎 PodcastTTS：一次 API 请求直接返回双主持切片文本、逐切片 MP3 与完整 MP3，并可继续生成真实 MP4。首次安装完成后，分别打开两个终端。
 
 终端一（后端）：
@@ -175,6 +177,14 @@ npm run dev
 然后访问终端显示的本地地址（默认 `http://localhost:3000`）。在“服务环境配置”中填写豆包语音 PodcastTTS 的 App ID 与 Access Token。需要使用 Seedream/Seedance 时，再执行 `python -m pip install -r mvp/requirements-ark.txt`，并在 `mvp/.env` 中填写可选的 `ARK_API_KEY`。密钥文件已被 Git 忽略，请勿提交。
 
 输入主题或传入文档后点击“生成脚本和音频”，页面会显示 PodcastTTS 返回的切片文本与音频进度；音频完成后可以继续使用嘎嘎和阿汪在动物园场景中生成 MP4。
+
+---
+
+## 🚀 生产部署
+
+`site/` 已配置为 OpenAI Sites 项目。发布前请在该目录执行 `npm ci` 和 `npm test`。仓库中的 `.openai/hosting.json` 已记录现有 Sites 项目标识，请勿自行替换 `project_id`。
+
+Sites 只发布网页与 Worker。`mvp/` 下的 Python 服务负责 PodcastTTS 调用、媒体持久化、FFmpeg 处理和 MP4 渲染，**不会**随 Sites 一起部署。`site/vite.config.ts` 中 `/api/mvp` 与 `/mvp-media` 到 `127.0.0.1:8787` 的代理仅在本地开发时生效。因此，要让公网版本具备完整生成功能，还需单独托管 Python 后端，并通过生产反向代理（或等效的同源路由）转发这两个路径。请勿公开 `mvp/.env`，也不要把 API 密钥放入前端环境变量。
 
 ---
 
