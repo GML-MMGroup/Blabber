@@ -155,7 +155,7 @@ npm ci
 On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` and create
 the configuration file with `Copy-Item mvp/.env.example mvp/.env`.
 
-If PowerShell blocks `npm.ps1` because of its execution policy, use `npm.cmd` for the documented npm commands (for example, `npm.cmd ci` and `npm.cmd run dev`). Verify the prerequisites before setup with `node --version`, `python --version`, `ffmpeg -version`, and `ffprobe -version`.
+If PowerShell blocks `npm.ps1` because of its execution policy, use `npm.cmd` for the documented npm commands (for example, `npm.cmd ci` and `npm.cmd run dev`). Verify the prerequisites before setup with `node --version`, `python --version`, `ffmpeg -version`, and `ffprobe -version`. Video segments are rendered concurrently: action video defaults to at most 4 workers and lip-sync video to at most 2. Set `BLABBER_VIDEO_WORKERS` in `mvp/.env` to a positive integer to override both; lower it if CPU, memory, or GPU memory is limited.
 
 The web UI uses Volcengine PodcastTTS to return two-host dialogue slices, per-slice MP3 files, and the complete MP3 in one API request, ready for MP4 generation. After setup, start the two local services in separate terminals.
 

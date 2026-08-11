@@ -4,8 +4,10 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import re
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -435,7 +437,7 @@ def _render_low_memory_video(
         for asset in assets.values()
     }
 
-    for index, segment in enumerate(timeline):
+    def render_segment(index: int, segment: Segment) -> Path:
         host_a_key = _asset_key(
             "HostA", segment.kind == "turn" and segment.speaker == "HostA"
         )
@@ -445,7 +447,6 @@ def _render_low_memory_video(
         host_a = assets[host_a_key]
         host_b = assets[host_b_key]
         segment_path = work_dir / f"{index:04d}.mp4"
-        segment_paths.append(segment_path)
         filters = [
             _segment_actor_filter(
                 1, "host_a", host_a, segment, args.fps,
@@ -493,13 +494,47 @@ def _render_low_memory_video(
             "-pix_fmt", "yuv420p", str(segment_path),
         ]
         print(
-            f"[动作视频] 渲染切片 {index + 1}/{len(timeline)}",
+            f"[动作视频] 开始渲染切片 {index + 1}/{len(timeline)}",
             flush=True,
         )
         _run(command)
-        if callable(progress_callback):
-            progress_callback(index + 1, len(timeline) + 1, "rendering")
+        return segment_path
 
+    segment_paths = [
+        work_dir / f"{index:04d}.mp4" for index in range(len(timeline))
+    ]
+    requested_workers = getattr(args, "parallel_workers", None)
+    if requested_workers is None:
+        requested_workers = int(os.getenv("BLABBER_VIDEO_WORKERS", "0") or 0)
+    workers = requested_workers or min(4, max(1, (os.cpu_count() or 2) // 2))
+    workers = max(1, min(workers, len(timeline)))
+    print(f"[动作视频] 使用 {workers} 个并行渲染任务", flush=True)
+    completed_count = 0
+    with ThreadPoolExecutor(
+        max_workers=workers, thread_name_prefix="video-segment"
+    ) as executor:
+        futures = {
+            executor.submit(render_segment, index, segment): index
+            for index, segment in enumerate(timeline)
+        }
+        try:
+            for future in as_completed(futures):
+                index = futures[future]
+                future.result()
+                completed_count += 1
+                print(
+                    f"[动作视频] 切片完成 {completed_count}/{len(timeline)} "
+                    f"({index + 1})",
+                    flush=True,
+                )
+                if callable(progress_callback):
+                    progress_callback(
+                        completed_count, len(timeline) + 1, "rendering"
+                    )
+        except BaseException:
+            for future in futures:
+                future.cancel()
+            raise
     concat_list = work_dir / "segments.txt"
     concat_list.write_text(
         "".join(f"file '{path.as_posix().replace(chr(39), chr(39) * 3)}'\n" for path in segment_paths),
@@ -812,6 +847,11 @@ def main() -> None:
     parser.add_argument("--min-action-speed", type=float, default=0.85)
     parser.add_argument("--max-action-speed", type=float, default=1.20)
     parser.add_argument("--fps", type=int, default=24)
+    parser.add_argument(
+        "--parallel-workers",
+        type=int,
+        help="并行渲染切片数；默认读取 BLABBER_VIDEO_WORKERS 或根据 CPU 自动选择",
+    )
     parser.add_argument(
         "--host-a-size", "--male-size", dest="host_a_size",
         type=int, default=735,

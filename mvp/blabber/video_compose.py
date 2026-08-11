@@ -1,4 +1,5 @@
 import asyncio
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -137,6 +138,7 @@ async def compose_episode_video(
     out_path: Path = None,
     fps: int = FPS,
     lipsync_engine: LipSyncEngine = None,
+    parallel_workers: int | None = None,
 ) -> Path:
     out_path = out_path or run_dir / "final.mp4"
     lipsync_engine = lipsync_engine or Wav2LipEngine()
@@ -155,26 +157,63 @@ async def compose_episode_video(
     tmp_dir = run_dir / "video_tmp"
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    segment_paths = []
-    for seg_i, (index, speaker, audio_path) in enumerate(turns):
+    for index, speaker, _ in turns:
         if speaker not in face_regions:
-            raise RuntimeError(f"turn {index} 的说话人 '{speaker}' 在 avatar 人脸区域里没有配置")
-        print(
-            f"[视频 {seg_i + 1}/{len(turns)}] 开始处理 "
-            f"{audio_path.name}（{speaker}）",
-            flush=True,
-        )
-        segment_paths.append(
-            await _render_turn(index, speaker, audio_path, background, face_regions, eye_regions, fps, tmp_dir, lipsync_engine)
-        )
-        print(
-            f"[视频 {seg_i + 1}/{len(turns)}] 片段完成: "
-            f"{segment_paths[-1].name}",
-            flush=True,
-        )
-        if seg_i != len(turns) - 1:
-            segment_paths.append(_render_pause(index, background, eye_regions, PAUSE_MS / 1000.0, fps, tmp_dir))
+            raise RuntimeError(
+                f"turn {index} 的说话人 '{speaker}' 在 avatar 人脸区域里没有配置"
+            )
 
+    requested_workers = parallel_workers
+    if requested_workers is None:
+        requested_workers = int(os.getenv("BLABBER_VIDEO_WORKERS", "0") or 0)
+    workers = requested_workers or min(2, len(turns))
+    workers = max(1, min(workers, len(turns)))
+    semaphore = asyncio.Semaphore(workers)
+    print(f"[视频合成] 使用 {workers} 个并行唇形任务", flush=True)
+
+    async def render_turn(seg_i: int, turn: tuple) -> Path:
+        index, speaker, audio_path = turn
+        async with semaphore:
+            print(
+                f"[视频 {seg_i + 1}/{len(turns)}] 开始处理 "
+                f"{audio_path.name}（{speaker}）",
+                flush=True,
+            )
+            rendered = await _render_turn(
+                index,
+                speaker,
+                audio_path,
+                background,
+                face_regions,
+                eye_regions,
+                fps,
+                tmp_dir,
+                lipsync_engine,
+            )
+            print(
+                f"[视频 {seg_i + 1}/{len(turns)}] 片段完成: {rendered.name}",
+                flush=True,
+            )
+            return rendered
+
+    rendered_turns = await asyncio.gather(
+        *(render_turn(seg_i, turn) for seg_i, turn in enumerate(turns))
+    )
+    segment_paths = []
+    for seg_i, rendered in enumerate(rendered_turns):
+        segment_paths.append(rendered)
+        if seg_i != len(turns) - 1:
+            index = turns[seg_i][0]
+            segment_paths.append(
+                _render_pause(
+                    index,
+                    background,
+                    eye_regions,
+                    PAUSE_MS / 1000.0,
+                    fps,
+                    tmp_dir,
+                )
+            )
     silent_path = tmp_dir / "silent_full.mp4"
     print(f"[视频合成] 正在拼接 {len(segment_paths)} 个片段", flush=True)
     _concat_videos(segment_paths, silent_path)

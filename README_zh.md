@@ -153,7 +153,7 @@ npm ci
 Windows PowerShell 使用 `.venv\Scripts\Activate.ps1` 激活虚拟环境，并用
 `Copy-Item mvp/.env.example mvp/.env` 创建配置文件。
 
-如果 PowerShell 的执行策略阻止运行 `npm.ps1`，请将文档中的 npm 命令改用 `npm.cmd`（例如 `npm.cmd ci`、`npm.cmd run dev`）。安装前可分别执行 `node --version`、`python --version`、`ffmpeg -version` 和 `ffprobe -version` 验证依赖是否已加入 `PATH`。
+如果 PowerShell 的执行策略阻止运行 `npm.ps1`，请将文档中的 npm 命令改用 `npm.cmd`（例如 `npm.cmd ci`、`npm.cmd run dev`）。安装前可分别执行 `node --version`、`python --version`、`ffmpeg -version` 和 `ffprobe -version` 验证依赖是否已加入 `PATH`。 视频片段会并行渲染：动作视频默认最多 4 个任务，唇形视频默认最多 2 个任务。可在 `mvp/.env` 中将 `BLABBER_VIDEO_WORKERS` 设为正整数以统一覆盖；CPU、内存或显存紧张时请调低。
 
 网页已接入火山引擎 PodcastTTS：一次 API 请求直接返回双主持切片文本、逐切片 MP3 与完整 MP3，并可继续生成真实 MP4。首次安装完成后，分别打开两个终端。
 
