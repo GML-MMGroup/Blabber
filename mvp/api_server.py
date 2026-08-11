@@ -92,6 +92,8 @@ ENV_FILE_ALLOWED_KEYS = {
     # Optional Ark credential is edited directly in mvp/.env rather than
     # exposed through the browser configuration form.
     "ARK_API_KEY",
+    "MVP_HOST",
+    "MVP_PORT",
 }
 
 

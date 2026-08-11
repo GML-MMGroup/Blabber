@@ -6,7 +6,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vinext dev",
+    "dev": "vinext dev --hostname 0.0.0.0",
     "dev:mvp": "cd ../mvp && python3 api_server.py",
     "build": "vinext build",
     "start": "vinext start",
