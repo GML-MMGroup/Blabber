@@ -281,8 +281,8 @@ ACTION_CHARACTER_SPEAKER_IDS = {
     "anime-reference-host-male": "zh_male_shaonianzixin_uranus_bigtts",
     "flat-tech-host-female": "zh_female_cancan_uranus_bigtts",
     "flat-tech-host-male": "zh_male_m191_uranus_bigtts",
-    "lowpoly-host-female": "zh_female_sophie_uranus_bigtts",
-    "lowpoly-host-male": "zh_male_ruyayichen_uranus_bigtts",
+    "lowpoly-host-female": "zh_female_mizai_saturn_bigtts",
+    "lowpoly-host-male": "zh_male_dayi_saturn_bigtts",
     "toon3d-luna": "zh_female_tianmeitaozi_uranus_bigtts",
     "toon3d-milo": "zh_male_shaonianzixin_uranus_bigtts",
 }
@@ -305,8 +305,8 @@ ACTION_CHARACTER_VOICE_PROMPTS = {
     "anime-reference-host-male": "青年男性动漫主持人，普通话标准，声音清爽自信、富有少年感。",
     "flat-tech-host-female": "青年女性科技主持人，普通话标准，声音知性清晰、干练亲切。",
     "flat-tech-host-male": "青年男性科技主持人，普通话标准，声音清晰沉稳、专业可信。",
-    "lowpoly-host-female": "成熟女性主持人，普通话标准，声音温和从容、富有质感。",
-    "lowpoly-host-male": "成熟男性主持人，普通话标准，声音温润稳重、富有质感。",
+    "lowpoly-host-female": "女性角色配音，普通话标准，声音灵动鲜明、富有故事感，表达自然生动。",
+    "lowpoly-host-male": "男性角色配音，普通话标准，声音沉稳清晰、富有表现力，表达自然从容。",
     "toon3d-luna": "青年女性三维卡通主持人，普通话标准，声音甜美明亮、自然活泼。",
     "toon3d-milo": "青年男性三维卡通主持人，普通话标准，声音清爽阳光、富有少年感。",
 }
