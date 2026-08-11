@@ -173,7 +173,75 @@ class VolcenginePodcastTTS:
             "X-Api-Request-Id": request_id,
         }
 
+    @staticmethod
+    def _is_retryable_stream_error(error: Exception) -> bool:
+        detail = str(error).casefold()
+        return any(marker in detail for marker in (
+            "rst_stream",
+            "stream terminated",
+            "downstream podcast service",
+            "connectionclosederror",
+            "keepalive ping timeout",
+        ))
+
     async def generate(
+        self,
+        prompt: str | None,
+        run_dir: Path,
+        target_minutes: float | None = None,
+        on_progress=None,
+        *,
+        input_text: str | None = None,
+        input_url: str | None = None,
+        topic: str | None = None,
+        speakers: list[str] | tuple[str, str] | None = None,
+        nlp_texts: list[dict[str, str]] | None = None,
+        only_nlp_text: bool = False,
+    ) -> PodcastResult:
+        attempts = 3
+        for attempt in range(1, attempts + 1):
+            try:
+                return await self._generate_once(
+                    prompt,
+                    run_dir,
+                    target_minutes,
+                    on_progress,
+                    input_text=input_text,
+                    input_url=input_url,
+                    topic=topic,
+                    speakers=speakers,
+                    nlp_texts=nlp_texts,
+                    only_nlp_text=only_nlp_text,
+                )
+            except Exception as error:
+                if (
+                    attempt >= attempts
+                    or not self._is_retryable_stream_error(error)
+                ):
+                    raise
+                clips_dir = run_dir / "clips"
+                if clips_dir.is_dir():
+                    for clip_path in clips_dir.glob("*.mp3"):
+                        clip_path.unlink(missing_ok=True)
+                for output_name in ("final.mp3", "script.json"):
+                    (run_dir / output_name).unlink(missing_ok=True)
+                delay = 2 ** (attempt - 1)
+                print(
+                    f"[PodcastTTS] 下游流中断，第 {attempt}/{attempts} 次失败，"
+                    f"{delay} 秒后重试：{error}",
+                    flush=True,
+                )
+                await _notify(on_progress, {
+                    "stage": "podcast_retry",
+                    "completed": attempt,
+                    "total": attempts,
+                    "retry_in_seconds": delay,
+                    "retry_message": str(error),
+                })
+                await asyncio.sleep(delay)
+        raise RuntimeError("PodcastTTS 重试状态异常")
+
+    async def _generate_once(
         self,
         prompt: str | None,
         run_dir: Path,
