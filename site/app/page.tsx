@@ -139,8 +139,8 @@ const voices: Voice[] = [
   { id: "zh_male_shaonianzixin_uranus_bigtts", actionId: "anime-reference-host-male", name: "少年梓辛 2.0", note: "豆包 TTS 2.0 · 清爽少年", prompt: "青年男性动漫主持人，普通话标准，声音清爽自信、富有少年感；语气自然有朝气，反应敏捷，节奏明快。", color: "#846cff" },
   { id: "zh_female_cancan_uranus_bigtts", actionId: "flat-tech-host-female", name: "知性灿灿 2.0", note: "豆包 TTS 2.0 · 知性清晰", prompt: "青年女性科技主持人，普通话标准，声音知性清晰、干练亲切；专业术语吐字准确，节奏稳定，表达有条理。", color: "#29a9d6" },
   { id: "zh_male_m191_uranus_bigtts", actionId: "flat-tech-host-male", name: "云舟 2.0", note: "豆包 TTS 2.0 · 清晰专业", prompt: "青年男性科技主持人，普通话标准，声音清晰沉稳、专业可信；表达简洁有条理，语速适中，语气自然从容。", color: "#3376d8" },
-  { id: "zh_female_mizai_saturn_bigtts", actionId: "lowpoly-host-female", name: "黑猫侦探社咪仔", note: "豆包 TTS 2.0 · 视频配音", prompt: "女性角色配音，普通话标准，声音灵动鲜明、富有故事感；表达自然生动，适合轻松活泼的播客对话。", color: "#bd6bd6" },
-  { id: "zh_male_dayi_saturn_bigtts", actionId: "lowpoly-host-male", name: "大壹", note: "豆包 TTS 2.0 · 视频配音", prompt: "男性角色配音，普通话标准，声音沉稳清晰、富有表现力；表达自然从容，适合知识与文化类播客。", color: "#8261c9" },
+  { id: "zh_female_mizaitongxue_v2_saturn_bigtts", actionId: "lowpoly-host-female", name: "黑猫侦探社咪仔", note: "豆包 TTS 2.0 · 视频配音", prompt: "女性角色配音，普通话标准，声音灵动鲜明、富有故事感；表达自然生动，适合轻松活泼的播客对话。", color: "#bd6bd6" },
+  { id: "zh_male_dayixiansheng_v2_saturn_bigtts", actionId: "lowpoly-host-male", name: "大壹", note: "豆包 TTS 2.0 · 视频配音", prompt: "男性角色配音，普通话标准，声音沉稳清晰、富有表现力；表达自然从容，适合知识与文化类播客。", color: "#8261c9" },
 ];
 
 const voiceOptions = voices.filter((voice, index) => voices.findIndex((item) => item.id === voice.id) === index);

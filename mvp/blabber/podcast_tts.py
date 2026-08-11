@@ -182,6 +182,7 @@ class VolcenginePodcastTTS:
             "downstream podcast service",
             "connectionclosederror",
             "keepalive ping timeout",
+            "read result timeout",
         ))
 
     async def generate(

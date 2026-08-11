@@ -281,8 +281,8 @@ ACTION_CHARACTER_SPEAKER_IDS = {
     "anime-reference-host-male": "zh_male_shaonianzixin_uranus_bigtts",
     "flat-tech-host-female": "zh_female_cancan_uranus_bigtts",
     "flat-tech-host-male": "zh_male_m191_uranus_bigtts",
-    "lowpoly-host-female": "zh_female_mizai_saturn_bigtts",
-    "lowpoly-host-male": "zh_male_dayi_saturn_bigtts",
+    "lowpoly-host-female": "zh_female_mizaitongxue_v2_saturn_bigtts",
+    "lowpoly-host-male": "zh_male_dayixiansheng_v2_saturn_bigtts",
     "toon3d-luna": "zh_female_tianmeitaozi_uranus_bigtts",
     "toon3d-milo": "zh_male_shaonianzixin_uranus_bigtts",
 }
