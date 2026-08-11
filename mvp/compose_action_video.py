@@ -72,6 +72,8 @@ def _probe_duration(path: Path) -> float:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if result.returncode:
         raise RuntimeError(f"无法读取时长：{path}\n{result.stderr[-1000:]}")
@@ -327,6 +329,8 @@ def _run(command: list[str]) -> None:
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     assert process.stderr is not None
     tail: list[str] = []
