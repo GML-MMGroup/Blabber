@@ -106,6 +106,28 @@ def _build_timeline(clips_dir: Path, audio_speed: float) -> list[Segment]:
     return timeline
 
 
+def _quantize_timeline_to_frames(
+    timeline: list[Segment], fps: int,
+) -> list[Segment]:
+    """Snap cumulative boundaries to CFR frames without per-segment drift."""
+    if fps <= 0:
+        raise ValueError("fps 必须大于 0")
+    quantized: list[Segment] = []
+    exact_cursor = 0.0
+    previous_end_frame = 0
+    for segment in timeline:
+        exact_cursor += segment.duration
+        end_frame = max(previous_end_frame + 1, round(exact_cursor * fps))
+        frame_count = end_frame - previous_end_frame
+        quantized.append(Segment(
+            segment.kind,
+            segment.speaker,
+            frame_count / fps,
+            segment.source_clip,
+        ))
+        previous_end_frame = end_frame
+    return quantized
+
 def _atempo_chain(speed: float) -> str:
     factors: list[float] = []
     remaining = speed
@@ -483,6 +505,7 @@ def _render_low_memory_video(
             "[with_actors][foreground]"
             "overlay=x=0:y=0:format=auto,format=yuv420p[video]",
         ])
+        frame_count = max(1, round(segment.duration * args.fps))
         command = [
             ffmpeg_binary(), "-y", "-filter_threads", "1",
             "-filter_complex_threads", "1",
@@ -493,7 +516,7 @@ def _render_low_memory_video(
             "-loop", "1", "-framerate", str(args.fps),
             "-i", str(inputs["foreground"]),
             "-filter_complex", ";\n".join(filters),
-            "-map", "[video]", "-t", f"{segment.duration:.9f}",
+            "-map", "[video]", "-frames:v", str(frame_count),
             "-r", str(args.fps), "-an", "-c:v", "libx264",
             "-preset", "veryfast", "-crf", "16", "-threads", "2",
             "-pix_fmt", "yuv420p", str(segment_path),
@@ -622,7 +645,9 @@ def compose(args: argparse.Namespace) -> Path:
     if args.host_b_dialogue_scale <= 0:
         raise ValueError("host-b-dialogue-scale 必须大于 0")
 
-    timeline = _build_timeline(run_dir / "clips", args.audio_speed)
+    timeline = _quantize_timeline_to_frames(
+        _build_timeline(run_dir / "clips", args.audio_speed), args.fps,
+    )
     assets = {
         "host_a_dialogue": ActionAsset(
             "host_a_dialogue",
