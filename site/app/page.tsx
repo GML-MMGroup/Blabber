@@ -678,6 +678,59 @@ export default function Home() {
     }
   }
 
+  async function generatePodcastVideo() {
+    if (!scriptReady || selected.length < 2 || !selectedSubtitleFont?.installed) {
+      if (!selectedSubtitleFont?.installed) setError(`请先下载字幕字体“${selectedSubtitleFont?.name || subtitleFontId}”`);
+      return;
+    }
+    setError("");
+    try {
+      let audioJob = audioReady && job ? job : null;
+      if (!audioJob?.audio_url) {
+        const defaultVoices = selected.slice(0, 2).map((character) => voices.find((voice) => voice.actionId === character.actionId) ?? voices[0]);
+        const audioResponse = await fetch("/api/mvp/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: episode.topic || prompt,
+            character_set: characterSet,
+            episode,
+            custom_voices: { HostA: defaultVoices[0].prompt, HostB: defaultVoices[1].prompt },
+            creative_config: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, subtitles: { font: subtitleFontId, size: subtitleSize } },
+          }),
+        });
+        audioJob = await audioResponse.json() as Job;
+        if (!audioResponse.ok) throw new Error(audioJob.error || "音频任务创建失败");
+        setJob(audioJob);
+        while (audioJob.status !== "complete") {
+          if (audioJob.status === "failed") throw new Error(audioJob.error || "音频生成失败");
+          await new Promise((resolve) => window.setTimeout(resolve, 1200));
+          const progressResponse = await fetch(`/api/mvp/jobs/${audioJob.id}`);
+          audioJob = await progressResponse.json() as Job;
+          if (!progressResponse.ok) throw new Error(audioJob.error || "读取音频任务失败");
+          setJob(audioJob);
+        }
+      }
+      if (!audioJob.audio_url) throw new Error("音频生成完成但未返回音频文件");
+      const videoResponse = await fetch(`/api/mvp/jobs/${audioJob.id}/video`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "action",
+          episode,
+          force: scriptDirty || subtitleDirty,
+          creative_config: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, subtitles: { font: subtitleFontId, size: subtitleSize } },
+        }),
+      });
+      const next = await videoResponse.json() as Job;
+      if (!videoResponse.ok) throw new Error(next.error || "视频任务创建失败");
+      setJob(next);
+      setScriptDirty(false);
+      setSubtitleDirty(false);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "音视频生成失败");
+    }
+  }
   function seekVideo(value: number) {
     const video = videoRef.current;
     const next = Math.max(0, Math.min(value, videoDuration || value));
@@ -839,8 +892,14 @@ export default function Home() {
 
   return (
     <main className="app-shell">
+      <header className="blabber-topbar">
+        <div className="blabber-brand"><img src="/blabber-logo.jpg" alt="Blabber" /><span><b>Blabber</b><small>AI 播客视频创作</small></span><em>Beta</em></div>
+        <nav className="creation-nav" aria-label="创作流程"><span className="active"><i>1</i>播客配置</span><b>→</b><button onClick={() => void generatePodcastVideo()} disabled={busy || !scriptReady || selected.length < 2 || !subtitleFontReady}><i>2</i>{videoActive || audioActive ? "生成中…" : "生成视频"}</button></nav>
+        <div className="topbar-tools"><button className="advanced-disabled" disabled title="即将开放">高级编辑<small>暂未开放</small></button><button>使用指南</button><button onClick={openConfig}>服务器配置</button></div>
+      </header>
       <section className="studio-layout" id="top">
         <aside className="script-column">
+          <div className="panel-heading"><span>✦</span><div><b>播客脚本</b><small>描述主题并确认对白内容</small></div></div>
           <div className="prompt-card">
             <div className="prompt-label"><span>✦</span>{sourceFile ? " 为文档补充节目标题（可选）" : " 描述你想制作的节目"}</div>
             <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={3} aria-label="播客主题" />
@@ -864,7 +923,7 @@ export default function Home() {
                 />
                 <span>＋ 传入文件</span>
               </label>
-              <button className="generate-script" onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())}>{scriptActive ? "生成脚本中…" : scriptAvailable ? "重新生成脚本" : "生成脚本"}<span>↗</span></button><button className="generate-audio" onClick={generateAudio} disabled={busy || !scriptReady || selected.length < 2}>{audioActive ? "合成音频中…" : audioReady ? "重新生成音频" : "确认并生成音频"}<span>↗</span></button>
+              <button className="generate-script" onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())}>{scriptActive ? "生成脚本中…" : scriptAvailable ? "重新生成脚本" : "生成脚本"}<span>↗</span></button>
             </div>
             {sourceFile && <div className="selected-document"><b>{sourceFile.name}</b><small>{formatFileSize(sourceFile.size)}</small><button onClick={() => {
                 setSourceFile(null);
@@ -904,6 +963,7 @@ export default function Home() {
         </aside>
 
         <section className="preview-column">
+          <div className="preview-heading"><span><b>预览效果</b><small>配置结果实时呈现</small></span>{(audioActive || videoActive) && <output>{job?.stage || "正在生成"} · {Math.max(audioProgress, videoProgress)}%</output>}</div>
           <div className="canvas-wrap">
             <div className="preview-canvas" style={{ "--scene-accent": background.accent } as CSSProperties}>
               {videoReady ? (
@@ -1033,7 +1093,7 @@ export default function Home() {
         </section>
 
         <aside className="assets-column">
-          <button className="config-trigger" onClick={openConfig} title="配置豆包语音 PodcastTTS" aria-label="服务环境配置"><span>⚙</span>服务环境配置</button>
+          <div className="panel-heading"><span>✦</span><div><b>主持人与画面配置</b><small>选择主持人、场景和字幕样式</small></div></div>
           <div className="asset-scroll">
             <section className="asset-section">
               <div className="background-grid">
