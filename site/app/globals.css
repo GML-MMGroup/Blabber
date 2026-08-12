@@ -289,3 +289,28 @@ body { background:#f7f7fa; }
 .position-card-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .position-card-grid .placement-card { display:block; width:auto; margin:0; }
 @media (max-width:760px) { .host-card-grid,.position-card-grid { grid-template-columns:1fr; } .host-select-card > img { max-height:260px; } }
+/* Readability pass: wider working rails and larger interface type */
+.studio-layout { grid-template-columns:370px 540px minmax(520px,1fr); }
+.panel-heading b,.preview-heading b { font-size:15px; }
+.panel-heading small,.preview-heading small { font-size:11px; }
+.prompt-label,.generation-actions .generate-script,.generation-actions .generate-audio { font-size:12px; }
+.prompt-card textarea { font-size:14px; }
+.generation-actions > label span { font-size:11px; }
+.history-panel > header,.history-panel > header button { font-size:11px; }
+.history-panel span b { font-size:11px; }.history-panel span small,.history-panel time { font-size:9px; }.history-panel p { font-size:10px; }
+.script-editor-head,.script-editor-head span { font-size:11px; }
+.edit-turn textarea { font-size:13px; line-height:1.65; }
+.speaker-toggle,.add-turn { font-size:12px; }.insert-turn { font-size:10px; }
+.workflow-steps b { font-size:14px; }.workflow-steps small { font-size:10px; }.workflow-steps i { font-size:13px; }
+.asset-scroll .asset-section:nth-child(1)::before,.asset-scroll .asset-section:nth-child(2)::before { font-size:15px; }
+.host-select-card > header b { font-size:13px; }.host-select-card > header small { font-size:9px; }
+.host-character-select > span,.host-voice-row label > span { font-size:10px; }
+.host-character-select select,.host-voice-row select { height:38px; font-size:11px; }
+.host-voice-row .voice-preview-button { height:38px; font-size:10px; }
+.position-section-title b { font-size:14px; }.position-section-title small { font-size:10px; }
+.placement-card span b { font-size:11px; }.placement-card span small { font-size:9px; }.placement-card label,.placement-card output { font-size:10px; }
+.section-title > span { font-size:12px; }.section-title small { font-size:10px; }
+.subtitle-font-control,.subtitle-size-control { font-size:11px; }.subtitle-font-control select { font-size:11px; }.font-message { font-size:10px; }
+.result-links { font-size:11px; }
+@media (max-width:1500px) { .studio-layout { grid-template-columns:340px 480px minmax(460px,1fr); } }
+@media (max-width:1280px) { .studio-layout { grid-template-columns:320px 430px minmax(420px,1fr); } }
