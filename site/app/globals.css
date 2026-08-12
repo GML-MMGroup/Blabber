@@ -355,3 +355,7 @@ body { background:#f7f7fa; }
 .position-card-grid { min-height:94px; }
 .position-card-grid .placement-card { display:block!important; visibility:visible; }
 @media (max-height:900px) and (min-width:1181px) { .studio-layout { height:auto; min-height:calc(100vh - 64px); grid-template-rows:76px 400px 122px 340px; overflow:visible; } .host-card-grid { flex-basis:235px; } }
+/* Desktop column ratio: 1/4 script, 1/4 hosts, 1/2 visual workspace */
+@media (min-width:1181px) {
+  .studio-layout { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2fr); }
+}
