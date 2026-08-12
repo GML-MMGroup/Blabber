@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 import websockets
 
+from .compose import compose_episode
 from .schema import Episode, Turn
 
 
@@ -330,7 +331,6 @@ class VolcenginePodcastTTS:
 
         turns: list[Turn] = []
         clips: list[dict] = []
-        podcast_audio = bytearray()
         round_audio = bytearray()
         # 官方响应中的 speaker 是请求的音色 ID。按请求数组显式绑定，
         # 避免把“第一个出声的人”误认为左侧 HostA。
@@ -409,7 +409,6 @@ class VolcenginePodcastTTS:
                         index = len(clips)
                         clip_path = clips_dir / f"{index:02d}_{current_turn.speaker}.mp3"
                         clip_path.write_bytes(round_audio)
-                        podcast_audio.extend(round_audio)
                         clips.append({
                             "index": index,
                             "speaker": current_turn.speaker,
@@ -455,9 +454,10 @@ class VolcenginePodcastTTS:
                 clips=[],
                 provider_audio_url=None,
             )
-        if not podcast_audio:
+        clip_paths = [Path(item["path"]) for item in clips]
+        if not clip_paths:
             raise RuntimeError("PodcastTTS 未返回音频")
-        final_path.write_bytes(podcast_audio)
+        compose_episode(clip_paths, final_path)
         audio_url = end_payload.get("meta_info", {}).get("audio_url")
         return PodcastResult(
             task_id=session_id,
