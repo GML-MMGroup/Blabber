@@ -970,13 +970,7 @@ export default function Home() {
           </section>
         </aside>
 
-        <div className="right-column-stack">
-          <section className="asset-section right-scene-section">
-            <div className="background-grid">
-              {backgrounds.map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => setBackgroundId(item.id)} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><i>✓</i></button>)}
-            </div>
-          </section>
-<section className="preview-column">
+        <section className="preview-column">
           <div className="preview-heading"><span><b>预览效果</b><small>配置结果实时呈现</small></span>{(audioActive || videoActive) && <output>{job?.stage || "正在生成"} · {Math.max(audioProgress, videoProgress)}%</output>}</div>
           <div className="canvas-wrap">
             <div className="preview-canvas" style={{ "--scene-accent": background.accent } as CSSProperties}>
@@ -1106,11 +1100,15 @@ export default function Home() {
           {(error || job?.error || audioReady || videoReady) && <div className={`result-links ${error || job?.error ? "has-error" : ""}`}><b>{error || job?.error || (videoReady ? "视频已生成" : job?.reused ? "已复用历史结果，未重复调用付费接口" : "切片文本与音频已生成，可继续生成视频")}</b><span>{job?.audio_url && <a href={job.audio_url} target="_blank" rel="noreferrer">播放完整音频</a>}{job?.provider_audio_url && <a href={job.provider_audio_url} download="blabber-podcast.mp3">下载音频</a>}{job?.video_url && <a href={job.video_url}>下载视频</a>}{job?.edited_video_url && <a href={job.edited_video_url} download>下载剪辑片段</a>}</span></div>}
         </section>
 
-        </div>
-
         <aside className="assets-column">
           <div className="panel-heading"><span>✦</span><div><b>主持人与画面配置</b><small>选择主持人、场景和字幕样式</small></div></div>
           <div className="asset-scroll">
+            <section className="asset-section">
+              <div className="background-grid">
+                {backgrounds.map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => setBackgroundId(item.id)} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><i>✓</i></button>)}
+              </div>
+            </section>
+
             <section className="asset-section host-selector-section">
               <div className="host-card-grid">
                 {([0, 1] as const).map((hostIndex) => {
