@@ -176,6 +176,14 @@ function Wave({ color }: { color: string }) {
   return <span className="voice-wave" style={{ color }} aria-hidden="true">▂▅▃▇▄▆▂▅▇▃▆▄</span>;
 }
 
+function GenerativeLoader({ label, progress }: { label: string; progress: number }) {
+  return <div className="generative-loader" role="status" aria-live="polite">
+    <span className="generative-loader-orbit" aria-hidden="true"><i /><i /><i /></span>
+    <span className="generative-loader-copy"><b>{label}</b><small>{progress > 0 ? `${progress}%` : "正在建立生成任务"}</small></span>
+    <span className="generative-loader-track" aria-hidden="true"><i style={{ width: `${Math.max(8, progress)}%` }} /></span>
+  </div>;
+}
+
 function nextCharacterSelection(current: string[], id: string): string[] {
   if (current.includes(id)) return current.filter((item) => item !== id);
   if (current.length < 2) return [...current, id];
@@ -941,7 +949,7 @@ export default function Home() {
                 />
                 <span aria-label="上传文件" title="上传文件">＋</span>
               </label>
-              <button className="generate-script" onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())} aria-label={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"} title={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"}>{scriptActive ? "…" : "➤"}</button>
+              <button className={`generate-script ${scriptActive ? "is-generating" : ""}`} onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())} aria-label={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"} title={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"}>{scriptActive ? <span className="script-loader-dots" aria-hidden="true"><i /><i /><i /></span> : "➤"}</button>
             </div>
             {sourceFile && <div className="selected-document"><b>{sourceFile.name}</b><small>{formatFileSize(sourceFile.size)}</small><button onClick={() => {
                 setSourceFile(null);
@@ -1007,6 +1015,10 @@ export default function Home() {
                   ><span>{subtitlePreviewText}</span></div>
                 </>
               )}
+              {(audioActive || videoActive) && <GenerativeLoader
+                label={videoActive ? (videoWaiting ? "正在准备视频素材" : "正在分段并行合成") : "正在生成主持人音频"}
+                progress={Math.max(audioProgress, videoProgress)}
+              />}
             </div>
           </div>
 
