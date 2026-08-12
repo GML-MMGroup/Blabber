@@ -569,3 +569,36 @@ body { background:#f7f7fa; }
   align-self:start;
   box-sizing:border-box;
 }
+/* Visual QA refinements: equal scene cards and true script/host baseline. */
+@media (min-width:1181px) {
+  .asset-scroll .asset-section:nth-child(1) .background-grid {
+    grid-template-columns:repeat(5,minmax(0,1fr));
+  }
+  .asset-scroll .asset-section:nth-child(1) .background-grid > button,
+  .asset-scroll .asset-section:nth-child(1) .background-grid > .more-scenes-button {
+    width:100%;
+    height:96px;
+    min-height:96px;
+    aspect-ratio:auto;
+    overflow:hidden;
+  }
+  .asset-scroll .asset-section:nth-child(1) .background-grid > button img {
+    width:100%;
+    height:100%;
+    aspect-ratio:auto;
+    object-fit:cover;
+  }
+  .asset-scroll .host-selector-section {
+    height:auto;
+    min-height:0;
+    align-self:stretch;
+  }
+}
+@media (min-width:1181px) {
+  .asset-scroll .asset-section.host-selector-section {
+    grid-area:2 / 2 / 5 / 3;
+    height:auto;
+    min-height:0;
+    align-self:stretch;
+  }
+}
