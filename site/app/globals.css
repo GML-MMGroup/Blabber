@@ -373,3 +373,9 @@ body { background:#f7f7fa; }
 .asset-scroll .asset-section:nth-child(1)::before,.asset-scroll .asset-section:nth-child(2)::before { font-size:17px; }
 .section-title > span { font-size:14px; }.section-title small,.subtitle-font-control,.subtitle-size-control,.subtitle-font-control select,.font-message { font-size:12px; }
 .result-links { font-size:13px; }
+/* New conversation header with history button */
+.conversation-heading { display:grid; grid-template-columns:29px minmax(0,1fr) auto; }
+.conversation-heading > button { border:1px solid #dedbe8; border-radius:8px; padding:7px 10px; background:#fff; color:#6f687b; font-size:12px; font-weight:800; cursor:pointer; }
+.conversation-heading > button:hover,.conversation-heading > button.active { border-color:#9d86f8; background:#f5f2ff; color:#6d50dc; }
+.history-panel { display:none; }
+.history-panel.open { display:block; }

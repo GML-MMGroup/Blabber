@@ -206,6 +206,7 @@ export default function Home() {
   const [configBusy, setConfigBusy] = useState(false);
   const [configMessage, setConfigMessage] = useState("");
   const [history, setHistory] = useState<Job[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [scriptDirty, setScriptDirty] = useState(false);
   const [subtitleDirty, setSubtitleDirty] = useState(false);
   const [subtitleFontId, setSubtitleFontId] = useState("system");
@@ -916,7 +917,7 @@ export default function Home() {
           <button onClick={() => void generatePodcastVideo()} disabled={busy || !scriptReady || selected.length < 2 || !subtitleFontReady}><i>2</i><b>{videoActive || audioActive ? "正在生成" : "生成视频"}</b><small>直接生成音频和视频</small><em>✦</em></button>
         </nav>
         <aside className="script-column">
-          <div className="panel-heading"><span>✦</span><div><b>播客脚本</b><small>描述主题并确认对白内容</small></div></div>
+          <div className="panel-heading conversation-heading"><span>✦</span><div><b>新对话</b><small>描述主题并确认对白内容</small></div><button className={historyOpen ? "active" : ""} onClick={() => setHistoryOpen((current) => !current)}>▣ 历史对话</button></div>
           <div className="prompt-card">
             <div className="prompt-label"><span>✦</span>{sourceFile ? " 为文档补充节目标题（可选）" : " 描述你想制作的节目"}</div>
             <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={3} aria-label="播客主题" />
@@ -948,8 +949,8 @@ export default function Home() {
               }} aria-label="移除文件">×</button></div>}
           </div>
 
-          <section className="history-panel" aria-label="生成历史记录">
-            <header><b>历史记录</b><button onClick={() => void loadHistory()}>刷新</button></header>
+          <section className={`history-panel ${historyOpen ? "open" : ""}`} aria-label="历史对话">
+            <header><b>历史对话</b><button onClick={() => void loadHistory()}>刷新</button></header>
             <div>
               {history.filter((item) => item.audio_url).slice(0, 20).map((item) => <button className={job?.id === item.id ? "active" : ""} onClick={() => restoreHistory(item)} key={item.id}>
                 <span><b>{item.episode?.topic || item.topic || item.prompt || item.file_name || "未命名播客"}</b><small>{item.file_name || `${item.episode?.turns?.length ?? item.clips?.length ?? 0} 个切片`}</small></span>
