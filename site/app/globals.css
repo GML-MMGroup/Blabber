@@ -261,3 +261,5 @@ body { background:#f7f7fa; }
 .canvas-wrap { padding:10px 14px 14px; }
 @media (max-width:1180px) { .studio-layout { height:auto; overflow:visible; grid-template-columns:300px minmax(360px,1fr); grid-template-rows:auto; grid-template-areas:"script steps" "script hosts" "script voices" "script scenes" "script subtitles" "script preview"; } .workflow-steps { grid-template-columns:repeat(2,1fr); } .preview-column { min-height:540px; } }
 @media (max-width:760px) { .mode-nav { order:3; width:100%; height:42px; } .studio-layout { display:flex; } .workflow-steps { display:grid; width:100%; } .assets-column,.assets-column .asset-scroll { display:contents; } .asset-scroll .asset-section { width:100%; } }
+.workflow-steps.two-step { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.workflow-steps.two-step > span,.workflow-steps.two-step > button { padding-left:22px; padding-right:22px; }
