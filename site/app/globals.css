@@ -533,7 +533,7 @@ body { background:#f7f7fa; }
 @media (min-width:1181px) {
   .studio-layout {
     height:auto;
-    grid-template-rows:76px 148px 0 auto;
+    grid-template-rows:76px 160px 0 auto;
     overflow:visible;
   }
   .asset-scroll .asset-section:nth-child(1) {
