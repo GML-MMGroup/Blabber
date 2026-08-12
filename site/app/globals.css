@@ -538,8 +538,8 @@ body { background:#f7f7fa; }
   }
   .asset-scroll .asset-section:nth-child(1) {
     align-self:start;
-    height:148px;
-    min-height:148px;
+    height:160px;
+    min-height:160px;
     padding-top:12px;
     padding-bottom:12px;
     overflow:visible;
