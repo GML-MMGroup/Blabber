@@ -642,3 +642,22 @@ body { background:#f7f7fa; }
     aspect-ratio:16/9;
   }
 }
+/* Refine the preview heading to match the centered canvas composition. */
+.preview-column .preview-heading {
+  min-height:62px;
+  flex:0 0 62px;
+  padding:13px 18px 11px;
+  align-items:center;
+  border-bottom-color:#eceaf1;
+}
+.preview-column .preview-heading b {
+  font-size:17px;
+  line-height:1.2;
+  letter-spacing:-.2px;
+}
+.preview-column .preview-heading small {
+  margin-top:4px;
+  font-size:12px;
+  line-height:1.25;
+  color:#9a94a2;
+}
