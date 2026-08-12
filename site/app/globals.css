@@ -347,3 +347,11 @@ body { background:#f7f7fa; }
 .host-position-section .position-section-title { margin-bottom:10px; }
 @media (max-height:820px) and (min-width:1181px) { .host-card-grid { flex-basis:242px; } }
 @media (max-width:1180px) { .asset-scroll .host-selector-section { grid-area:hosts; } }
+/* Ensure placement controls stay visible inside the unified host module */
+.studio-layout { grid-template-rows:76px minmax(390px,1.35fr) 122px minmax(250px,1fr); }
+.asset-scroll .host-selector-section { overflow:visible!important; }
+.host-card-grid { flex:0 0 238px; }
+.host-position-section { display:block!important; flex:0 0 auto; visibility:visible; min-height:138px; margin-top:12px; padding-top:12px; }
+.position-card-grid { min-height:94px; }
+.position-card-grid .placement-card { display:block!important; visibility:visible; }
+@media (max-height:900px) and (min-width:1181px) { .studio-layout { height:auto; min-height:calc(100vh - 64px); grid-template-rows:76px 400px 122px 340px; overflow:visible; } .host-card-grid { flex-basis:235px; } }
