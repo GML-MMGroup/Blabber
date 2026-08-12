@@ -194,6 +194,7 @@ export default function Home() {
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState("");
   const [backgroundId, setBackgroundId] = useState("zoo");
+  const [moreScenesOpen, setMoreScenesOpen] = useState(false);
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>(["duck", "dog"]);
   const [voiceAdjustments, setVoiceAdjustments] = useState([{ speed: 1, volume: 70 }, { speed: 1, volume: 70 }]);
   const [selectedVoiceIds, setSelectedVoiceIds] = useState<string[]>(["zh_female_qiaopinv_uranus_bigtts", "zh_male_wennuanahu_uranus_bigtts"]);
@@ -1105,7 +1106,12 @@ export default function Home() {
           <div className="asset-scroll">
             <section className="asset-section">
               <div className="background-grid">
-                {backgrounds.map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => setBackgroundId(item.id)} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><i>✓</i></button>)}
+                {backgrounds.slice(0, 4).map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => setBackgroundId(item.id)} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><i>✓</i></button>)}
+                {backgrounds.length > 4 && <button className={`more-scenes-button ${moreScenesOpen ? "active" : ""}`} onClick={() => setMoreScenesOpen((open) => !open)} aria-expanded={moreScenesOpen}><span>▦</span><b>更多场景</b></button>}
+                {moreScenesOpen && <div className="more-scenes-panel" role="dialog" aria-label="更多背景场景">
+                  <header><b>更多场景</b><button onClick={() => setMoreScenesOpen(false)} aria-label="关闭更多场景">×</button></header>
+                  <div>{backgrounds.slice(4).map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => { setBackgroundId(item.id); setMoreScenesOpen(false); }} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><span>{item.name}</span><i>✓</i></button>)}</div>
+                </div>}
               </div>
             </section>
 
