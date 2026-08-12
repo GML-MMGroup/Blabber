@@ -446,12 +446,16 @@ body { background:#f7f7fa; }
 .embedded-subtitle-controls .section-title { margin-bottom:12px; }
 .asset-scroll .host-selector-section { padding-bottom:18px; }
 @media (min-width:1181px) { .preview-column { grid-column:3; grid-row:3/5; } }
-/* Keep the middle configuration panel aligned with the script panel bottom. */
+/* Let the configuration panel grow naturally and keep both columns aligned. */
 @media (min-width:1181px) {
-  .studio-layout { grid-template-rows:76px minmax(0,1.35fr) 122px minmax(0,1fr); }
+  .studio-layout {
+    height:auto;
+    min-height:calc(100vh - 64px);
+    grid-template-rows:76px auto 122px auto;
+    overflow:visible;
+  }
   .asset-scroll .host-selector-section {
-    min-height:0;
     align-self:stretch;
-    overflow-y:auto!important;
+    overflow:visible!important;
   }
 }
