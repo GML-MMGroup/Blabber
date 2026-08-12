@@ -459,3 +459,17 @@ body { background:#f7f7fa; }
     overflow:visible!important;
   }
 }
+/* Independent right workspace; only script and host columns share height. */
+@media (min-width:1181px) {
+  .studio-layout { position:relative; grid-template-rows:76px auto; grid-template-areas:"script steps steps" "script hosts ."; }
+  .asset-scroll .host-selector-section { grid-column:2; grid-row:2; }
+  .right-column-stack { position:absolute; top:102px; right:14px; width:calc((100% - 52px) / 2); display:flex; flex-direction:column; gap:12px; }
+  .right-scene-section,.right-column-stack .preview-column { flex:none; width:100%; }
+  .right-scene-section { overflow:hidden; border:1px solid #e8e7ed; border-radius:15px; padding:16px; background:#fff; box-shadow:0 8px 26px rgba(40,35,60,.04); }
+  .right-scene-section::before { content:"场景与字幕 · 背景场景"; display:block; margin-bottom:10px; color:#282432; font-size:17px; font-weight:900; }
+  .right-column-stack .preview-column { min-height:620px; }
+}
+@media (max-width:1180px) {
+  .right-column-stack { display:contents; }
+  .right-scene-section { grid-area:scenes; }
+}
