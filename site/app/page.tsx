@@ -207,6 +207,7 @@ export default function Home() {
   const [configMessage, setConfigMessage] = useState("");
   const [history, setHistory] = useState<Job[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [scriptPageOpen, setScriptPageOpen] = useState(false);
   const [scriptDirty, setScriptDirty] = useState(false);
   const [subtitleDirty, setSubtitleDirty] = useState(false);
   const [subtitleFontId, setSubtitleFontId] = useState("system");
@@ -939,33 +940,20 @@ export default function Home() {
                     if (file) setPrompt("");
                   }}
                 />
-                <span>＋ 传入文件</span>
+                <span aria-label="上传文件" title="上传文件">＋</span>
               </label>
-              <button className="generate-script" onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())}>{scriptActive ? "生成脚本中…" : scriptAvailable ? "重新生成脚本" : "生成脚本"}<span>↗</span></button>
+              <button className="generate-script" onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())} aria-label={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"} title={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"}>{scriptActive ? "…" : "➤"}</button>
             </div>
             {sourceFile && <div className="selected-document"><b>{sourceFile.name}</b><small>{formatFileSize(sourceFile.size)}</small><button onClick={() => {
                 setSourceFile(null);
                 if (sourceFileInput.current) sourceFileInput.current.value = "";
               }} aria-label="移除文件">×</button></div>}
           </div>
-          <div className="script-editor-head">
-            <label>{audioActive ? "正在接收脚本切片…" : episode.turns.length ? "脚本和音频已生成" : "生成后显示脚本切片"}</label>
-            <span>{episode.turns.length} 句</span>
-          </div>
-          <div className="turn-editor">
-            <button className="insert-turn first" onClick={() => insertTurnAt(0)} disabled={audioReady}>＋ 在开头插入对白</button>
-            {episode.turns.map((turn, index) => (
-              <Fragment key={`${index}-${turn.speaker}`}>
-                <article className={`edit-turn ${turn.speaker === "HostB" ? "host-b" : ""}`}>
-                  <button className="speaker-toggle" disabled={audioReady} onClick={() => updateTurn(index, { speaker: turn.speaker === "HostA" ? "HostB" : "HostA" })}>{turn.speaker === "HostA" ? "A" : "B"}</button>
-                  <textarea value={turn.text} placeholder="输入新的对白…" onChange={(event) => updateTurn(index, { text: event.target.value })} rows={Math.max(2, Math.ceil(turn.text.length / 23))} aria-label={`第 ${index + 1} 句对白`} />
-                  <button className="delete-turn" disabled={audioReady} onClick={() => deleteTurn(index)} aria-label={`删除第 ${index + 1} 句`}>×</button>
-                </article>
-                {index < episode.turns.length - 1 && <button className="insert-turn" disabled={audioReady} onClick={() => insertTurnAt(index + 1)}>＋ 在此处插入</button>}
-              </Fragment>
-            ))}
-          </div>
-          <button className="add-turn" onClick={addTurn} disabled={audioReady}>＋ 在末尾添加对白</button>
+          <section className={`script-structure-card ${episode.turns.length ? "ready" : "empty"}`}>
+            <header><span>{episode.turns.length ? "✓" : "⌁"}</span><div><b>{episode.turns.length ? "播客脚本已生成" : "等待生成结构化脚本"}</b><small>{episode.turns.length ? `${episode.turns.length} 段对话 · Host A ${episode.turns.filter((turn) => turn.speaker === "HostA").length} 段 · Host B ${episode.turns.filter((turn) => turn.speaker === "HostB").length} 段` : "输入主题后，脚本将在这里以结构化摘要返回"}</small></div></header>
+            {episode.turns.length > 0 && <div className="script-outline"><b>脚本结构</b>{episode.turns.slice(0, 4).map((turn, index) => <p key={index}><i>{turn.speaker === "HostA" ? "A" : "B"}</i><span>{turn.text}</span></p>)}</div>}
+            <button onClick={() => setScriptPageOpen(true)} disabled={!episode.turns.length}>查看脚本</button>
+          </section>
         </aside>
 
         <section className="preview-column">
@@ -1158,7 +1146,18 @@ export default function Home() {
           </div>
         </aside>
       </section>
-      {historyOpen && <div className="history-page" role="dialog" aria-modal="true" aria-label="历史对话页面">
+      {scriptPageOpen && <div className="script-page" role="dialog" aria-modal="true" aria-label="结构化脚本编辑页面">
+        <section>
+          <header><div><small>STRUCTURED PODCAST SCRIPT</small><h2>{episode.topic || "播客脚本"}</h2><p>{episode.turns.length} 段结构化对话，可修改主持人、内容及段落顺序。</p></div><button onClick={() => setScriptPageOpen(false)} aria-label="关闭脚本页面">×</button></header>
+          <div className="script-page-stats"><span><b>{episode.turns.length}</b><small>对话段落</small></span><span><b>{episode.turns.filter((turn) => turn.speaker === "HostA").length}</b><small>Host A</small></span><span><b>{episode.turns.filter((turn) => turn.speaker === "HostB").length}</b><small>Host B</small></span></div>
+          <div className="script-page-list">
+            <button className="insert-turn first" onClick={() => insertTurnAt(0)} disabled={audioReady}>＋ 在开头插入对白</button>
+            {episode.turns.map((turn, index) => <Fragment key={`${index}-${turn.speaker}`}><article className={turn.speaker === "HostB" ? "host-b" : "host-a"}><header><button disabled={audioReady} onClick={() => updateTurn(index, { speaker: turn.speaker === "HostA" ? "HostB" : "HostA" })}>Host {turn.speaker === "HostA" ? "A" : "B"}</button><span>第 {index + 1} 段</span><button disabled={audioReady} onClick={() => deleteTurn(index)} aria-label={`删除第 ${index + 1} 段`}>删除</button></header><textarea value={turn.text} onChange={(event) => updateTurn(index, { text: event.target.value })} rows={Math.max(3, Math.ceil(turn.text.length / 48))} /></article>{index < episode.turns.length - 1 && <button className="insert-turn" disabled={audioReady} onClick={() => insertTurnAt(index + 1)}>＋ 在此处插入段落</button>}</Fragment>)}
+            <button className="add-turn" onClick={addTurn} disabled={audioReady}>＋ 在末尾添加对白</button>
+          </div>
+          <footer><span>{audioReady ? "音频已生成，如需修改请重新开始音频生成。" : "修改内容会自动同步到视频字幕。"}</span><button onClick={() => setScriptPageOpen(false)}>保存并返回</button></footer>
+        </section>
+      </div>}      {historyOpen && <div className="history-page" role="dialog" aria-modal="true" aria-label="历史对话页面">
         <section>
           <header><div><small>BLABBER ARCHIVE</small><h2>历史对话</h2><p>浏览已生成的播客项目，点击任意记录恢复到创作工作台。</p></div><button onClick={() => setHistoryOpen(false)} aria-label="关闭历史对话">×</button></header>
           <div className="history-page-toolbar"><b>全部对话</b><button onClick={() => void loadHistory()}>↻ 刷新列表</button></div>
