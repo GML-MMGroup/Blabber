@@ -624,3 +624,21 @@ body { background:#f7f7fa; }
     max-height:100%;
   }
 }
+/* Center the 16:9 preview visually within the available preview panel. */
+@media (min-width:1181px) {
+  .preview-column .canvas-wrap {
+    flex:1 1 auto;
+    display:grid;
+    place-items:center;
+    width:100%;
+    min-height:0;
+    padding-top:14px;
+    padding-bottom:14px;
+  }
+  .preview-column .preview-canvas {
+    width:100%;
+    height:auto;
+    max-height:100%;
+    aspect-ratio:16/9;
+  }
+}
