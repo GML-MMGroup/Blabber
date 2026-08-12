@@ -894,10 +894,16 @@ export default function Home() {
     <main className="app-shell">
       <header className="blabber-topbar">
         <div className="blabber-brand"><img src="/blabber-logo.jpg" alt="Blabber" /><span><b>Blabber</b><small>AI 播客视频创作</small></span><em>Beta</em></div>
-        <nav className="creation-nav" aria-label="创作流程"><span className="active"><i>1</i>播客配置</span><b>→</b><button onClick={() => void generatePodcastVideo()} disabled={busy || !scriptReady || selected.length < 2 || !subtitleFontReady}><i>2</i>{videoActive || audioActive ? "生成中…" : "生成视频"}</button></nav>
+        <nav className="mode-nav" aria-label="编辑模式"><span className="active">创作模式</span><button disabled>高级编辑<small>暂未开放</small></button></nav>
         <div className="topbar-tools"><button className="advanced-disabled" disabled title="即将开放">高级编辑<small>暂未开放</small></button><button>使用指南</button><button onClick={openConfig}>服务器配置</button></div>
       </header>
       <section className="studio-layout" id="top">
+        <nav className="workflow-steps" aria-label="视频创作流程">
+          <span className={scriptReady ? "done" : scriptActive ? "active" : ""}><i>1</i><b>生成脚本</b><small>{scriptReady ? "脚本已就绪" : "创建播客对白"}</small><em>{scriptReady ? "✓" : "→"}</em></span>
+          <span className="active"><i>2</i><b>主持人配置</b><small>选择主持人与音色</small><em>→</em></span>
+          <span><i>3</i><b>场景与字幕</b><small>配置背景与字幕样式</small><em>→</em></span>
+          <button onClick={() => void generatePodcastVideo()} disabled={busy || !scriptReady || selected.length < 2 || !subtitleFontReady}><i>4</i><b>{videoActive || audioActive ? "正在生成" : "生成视频"}</b><small>直接生成音频和视频</small><em>✦</em></button>
+        </nav>
         <aside className="script-column">
           <div className="panel-heading"><span>✦</span><div><b>播客脚本</b><small>描述主题并确认对白内容</small></div></div>
           <div className="prompt-card">
