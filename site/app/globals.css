@@ -359,3 +359,17 @@ body { background:#f7f7fa; }
 @media (min-width:1181px) {
   .studio-layout { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,2fr); }
 }
+/* Readability pass 2: one more type scale step */
+.mode-nav span,.mode-nav button,.topbar-tools button { font-size:13px; }
+.blabber-brand span small { font-size:11px; }
+.workflow-steps b { font-size:16px; }.workflow-steps small { font-size:12px; }
+.panel-heading b,.preview-heading b { font-size:17px; }.panel-heading small,.preview-heading small { font-size:13px; }
+.prompt-label { font-size:14px; }.prompt-card textarea { font-size:16px; }.generation-actions .generate-script,.generation-actions > label span { font-size:13px; }
+.history-panel > header,.history-panel > header button,.history-panel span b { font-size:13px; }.history-panel span small,.history-panel time,.history-panel p { font-size:11px; }
+.script-editor-head,.script-editor-head span { font-size:13px; }.edit-turn textarea { font-size:15px; }.speaker-toggle,.add-turn { font-size:14px; }.insert-turn { font-size:12px; }
+.host-select-card > header b { font-size:15px; }.host-select-card > header small { font-size:11px; }
+.host-character-select > span,.host-voice-row label > span { font-size:12px; }.host-character-select select,.host-voice-row select { font-size:13px; }.host-voice-row .voice-preview-button { font-size:12px; }
+.position-section-title b { font-size:16px; }.position-section-title small { font-size:12px; }.placement-card span b { font-size:13px; }.placement-card span small,.placement-card label,.placement-card output { font-size:12px; }
+.asset-scroll .asset-section:nth-child(1)::before,.asset-scroll .asset-section:nth-child(2)::before { font-size:17px; }
+.section-title > span { font-size:14px; }.section-title small,.subtitle-font-control,.subtitle-size-control,.subtitle-font-control select,.font-message { font-size:12px; }
+.result-links { font-size:13px; }
