@@ -477,3 +477,11 @@ body { background:#f7f7fa; }
     overflow:visible!important;
   }
 }
+/* Match the host configuration container height to the script column. */
+@media (min-width:1181px) {
+  .asset-scroll .host-selector-section {
+    height:calc(100vh - 92px);
+    min-height:792px;
+    box-sizing:border-box;
+  }
+}
