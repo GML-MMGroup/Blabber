@@ -909,7 +909,7 @@ export default function Home() {
       <header className="blabber-topbar">
         <div className="blabber-brand"><img src="/blabber-logo.jpg" alt="Blabber" /><span><b>Blabber</b><small>AI 播客视频创作</small></span><em>Beta</em></div>
         <nav className="mode-nav" aria-label="编辑模式"><span className="active">创作模式</span><button disabled>高级编辑<small>暂未开放</small></button></nav>
-        <div className="topbar-tools"><button className="advanced-disabled" disabled title="即将开放">高级编辑<small>暂未开放</small></button><button>使用指南</button><button onClick={openConfig}>服务器配置</button></div>
+        <div className="topbar-tools"><button>使用指南</button><button onClick={openConfig}>服务器配置</button></div>
       </header>
       <section className="studio-layout" id="top">
         <nav className="workflow-steps two-step" aria-label="视频创作流程">
