@@ -560,3 +560,12 @@ body { background:#f7f7fa; }
     overflow:visible;
   }
 }
+/* Keep the more-scenes card identical to each scene thumbnail card. */
+.asset-scroll .asset-section:nth-child(1) .background-grid > .more-scenes-button {
+  width:100%;
+  height:auto;
+  min-height:0;
+  aspect-ratio:16/9;
+  align-self:start;
+  box-sizing:border-box;
+}
