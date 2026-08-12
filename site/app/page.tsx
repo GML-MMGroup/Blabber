@@ -1108,10 +1108,7 @@ export default function Home() {
               <div className="background-grid">
                 {backgrounds.slice(0, 4).map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => setBackgroundId(item.id)} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><i>✓</i></button>)}
                 {backgrounds.length > 4 && <button className={`more-scenes-button ${moreScenesOpen ? "active" : ""}`} onClick={() => setMoreScenesOpen((open) => !open)} aria-expanded={moreScenesOpen}><span>▦</span><b>更多场景</b></button>}
-                {moreScenesOpen && <div className="more-scenes-panel" role="dialog" aria-label="更多背景场景">
-                  <header><b>更多场景</b><button onClick={() => setMoreScenesOpen(false)} aria-label="关闭更多场景">×</button></header>
-                  <div>{backgrounds.slice(4).map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => { setBackgroundId(item.id); setMoreScenesOpen(false); }} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><span>{item.name}</span><i>✓</i></button>)}</div>
-                </div>}
+
               </div>
             </section>
 
@@ -1169,7 +1166,12 @@ export default function Home() {
           </div>
         </aside>
       </section>
-      {saveAsOpen && <div className="save-as-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSaveAsOpen(false)}>
+      {moreScenesOpen && <div className="more-scenes-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setMoreScenesOpen(false)}>
+        <section className="more-scenes-dialog" role="dialog" aria-modal="true" aria-label="更多背景场景">
+          <header><div><small>SCENE LIBRARY</small><h2>更多场景</h2><p>选择一个背景场景应用到视频预览。</p></div><button onClick={() => setMoreScenesOpen(false)} aria-label="关闭更多场景">×</button></header>
+          <div className="more-scenes-list">{backgrounds.slice(4).map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => { setBackgroundId(item.id); setMoreScenesOpen(false); }} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><span>{item.name}</span><i>✓</i></button>)}</div>
+        </section>
+      </div>}{saveAsOpen && <div className="save-as-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSaveAsOpen(false)}>
         <section className="save-as-dialog" role="dialog" aria-modal="true" aria-label="项目另存为">
           <header><div><small>SAVE A COPY</small><h2>项目另存为</h2><p>为当前播客脚本创建一个独立副本。</p></div><button onClick={() => setSaveAsOpen(false)} aria-label="关闭另存为">×</button></header>
           <label><span>项目名称</span><input autoFocus value={saveAsName} onChange={(event) => setSaveAsName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && saveAsName.trim()) { localStorage.setItem(`blabber-project-${Date.now()}`, JSON.stringify({ name: saveAsName.trim(), episode, creativeConfig: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } } })); setSavedProjectName(saveAsName.trim()); setSaveAsOpen(false); } }} /></label>

@@ -513,3 +513,19 @@ body { background:#f7f7fa; }
   .asset-scroll .asset-section:nth-child(1) .background-grid > button:nth-child(4) { display:none; }
   .more-scenes-panel > div { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+/* Present the extended scene library in a separate modal. */
+.more-scenes-backdrop { position:fixed; z-index:130; inset:0; display:grid; place-items:center; padding:24px; background:rgba(25,21,36,.55); backdrop-filter:blur(7px); }
+.more-scenes-dialog { width:min(920px,94vw); max-height:88vh; overflow:hidden; border:1px solid rgba(255,255,255,.8); border-radius:18px; background:#fff; box-shadow:0 30px 90px rgba(25,20,45,.32); }
+.more-scenes-dialog > header { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding:22px 24px 18px; border-bottom:1px solid #ebe8f0; background:linear-gradient(135deg,#fff,#faf8ff); }
+.more-scenes-dialog header small { color:#7257df; font-size:10px; font-weight:900; letter-spacing:1.3px; }
+.more-scenes-dialog header h2 { margin:5px 0 4px; font-size:24px; }
+.more-scenes-dialog header p { margin:0; color:#918b9a; font-size:13px; }
+.more-scenes-dialog header > button { width:36px; height:36px; border:0; border-radius:9px; background:#f0eef4; color:#77717f; font-size:22px; cursor:pointer; }
+.more-scenes-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; max-height:calc(88vh - 112px); overflow-y:auto; padding:22px 24px 26px; }
+.more-scenes-list > button { position:relative; min-width:0; border:1px solid #e1dde8; border-radius:13px; padding:7px; background:#faf9fc; cursor:pointer; text-align:left; }
+.more-scenes-list > button.selected { border-color:var(--violet); box-shadow:0 0 0 3px #ece7ff; }
+.more-scenes-list img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:9px; }
+.more-scenes-list span { display:block; padding:10px 5px 5px; color:#3d3745; font-size:14px; font-weight:900; }
+.more-scenes-list i { display:none; }
+.more-scenes-list .selected i { display:grid; position:absolute; top:13px; right:13px; width:24px; height:24px; place-items:center; border-radius:50%; background:var(--violet); color:#fff; font-style:normal; }
+@media (max-width:700px) { .more-scenes-backdrop { padding:10px; } .more-scenes-list { grid-template-columns:repeat(2,minmax(0,1fr)); padding:14px; } }
