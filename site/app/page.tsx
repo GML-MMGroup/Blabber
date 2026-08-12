@@ -707,46 +707,36 @@ export default function Home() {
       return;
     }
     setError("");
+    setTrimMessage("");
+    setTrimError(false);
+    const defaultVoices = selected.slice(0, 2).map((character) =>
+      voices.find((voice) => voice.actionId === character.actionId) ?? voices[0]
+    );
     try {
-      let audioJob = audioReady && job ? job : null;
-      if (!audioJob?.audio_url) {
-        const defaultVoices = selected.slice(0, 2).map((character) => voices.find((voice) => voice.actionId === character.actionId) ?? voices[0]);
-        const audioResponse = await fetch("/api/mvp/jobs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: episode.topic || prompt,
-            character_set: characterSet,
-            episode,
-            custom_voices: { HostA: defaultVoices[0].prompt, HostB: defaultVoices[1].prompt },
-            creative_config: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } },
-          }),
-        });
-        audioJob = await audioResponse.json() as Job;
-        if (!audioResponse.ok) throw new Error(audioJob.error || "音频任务创建失败");
-        setJob(audioJob);
-        while (audioJob.status !== "complete") {
-          if (audioJob.status === "failed") throw new Error(audioJob.error || "音频生成失败");
-          await new Promise((resolve) => window.setTimeout(resolve, 1200));
-          const progressResponse = await fetch(`/api/mvp/jobs/${audioJob.id}`);
-          audioJob = await progressResponse.json() as Job;
-          if (!progressResponse.ok) throw new Error(audioJob.error || "读取音频任务失败");
-          setJob(audioJob);
-        }
-      }
-      if (!audioJob.audio_url) throw new Error("音频生成完成但未返回音频文件");
-      const videoResponse = await fetch(`/api/mvp/jobs/${audioJob.id}/video`, {
+      const response = await fetch("/api/mvp/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mode: "action",
+          prompt: episode.topic || prompt,
+          character_set: characterSet,
           episode,
-          force: scriptDirty || subtitleDirty,
-          creative_config: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } },
+          auto_generate_video: true,
+          custom_voices: {
+            HostA: defaultVoices[0].prompt,
+            HostB: defaultVoices[1].prompt,
+          },
+          creative_config: {
+            background: background.id,
+            characters: selected.map((item) => item.actionId),
+            placements,
+            voices: effectiveVoiceIds,
+            voiceAdjustments,
+            subtitles: { font: subtitleFontId, size: subtitleSize },
+          },
         }),
       });
-      const next = await videoResponse.json() as Job;
-      if (!videoResponse.ok) throw new Error(next.error || "视频任务创建失败");
+      const next = await response.json() as Job;
+      if (!response.ok) throw new Error(next.error || "音视频任务创建失败");
       setJob(next);
       setScriptDirty(false);
       setSubtitleDirty(false);
@@ -754,6 +744,7 @@ export default function Home() {
       setError(cause instanceof Error ? cause.message : "音视频生成失败");
     }
   }
+
   function seekVideo(value: number) {
     const video = videoRef.current;
     const next = Math.max(0, Math.min(value, videoDuration || value));

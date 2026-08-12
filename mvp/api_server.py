@@ -1215,6 +1215,8 @@ def _generate_audio(
     custom_voices: dict[str, str] | None,
     speaker_ids: list[str],
     episode: Episode | None,
+    auto_video: bool = False,
+    video_creative_config: dict | None = None,
 ) -> None:
     def progress(payload: dict) -> None:
         _live_progress(job_id, prompt, payload)
@@ -1231,12 +1233,19 @@ def _generate_audio(
                 episode=episode,
             )
         )
-        _complete_audio_job(job_id, final_path)
+        _complete_audio_job(job_id, final_path, completing=not auto_video)
+        if auto_video:
+            _generate_video(
+                job_id, final_path.parent, "action", character_set,
+                video_creative_config or {},
+            )
     except Exception as error:
         _update_job(job_id, status="failed", stage="failed", error=str(error))
 
 
-def _complete_audio_job(job_id: str, final_path: Path) -> None:
+def _complete_audio_job(
+    job_id: str, final_path: Path, completing: bool = True,
+) -> None:
     script_path = final_path.parent / "script.json"
     episode_payload = None
     if script_path.is_file():
@@ -1265,8 +1274,8 @@ def _complete_audio_job(job_id: str, final_path: Path) -> None:
             provider_audio_url = manifest["provider_audio_url"]
     _update_job(
         job_id,
-        status="complete",
-        stage="complete",
+        status="complete" if completing else "running",
+        stage="complete" if completing else "audio_complete",
         audio_url=_media_url(final_path),
         script_url=_media_url(script_path),
         episode=episode_payload,
@@ -2192,6 +2201,7 @@ class Handler(BaseHTTPRequestHandler):
             creative_config = _normalize_creative_config(
                 body.get("creative_config")
             )
+            auto_generate_video = bool(body.get("auto_generate_video"))
             resolved_voices = dict(custom_voices or {})
             for speaker, character in zip(
                 ("HostA", "HostB"), creative_config["characters"]
@@ -2245,6 +2255,33 @@ class Handler(BaseHTTPRequestHandler):
             })
             cached_job = _find_completed_job(fingerprint)
             if cached_job is not None:
+                cached_video_config = _normalize_creative_config(
+                    cached_job.get("creative_config")
+                )
+                needs_video = (
+                    not cached_job.get("video_url")
+                    or cached_video_config != creative_config
+                )
+                if auto_generate_video and needs_video:
+                    run_dir = Path(cached_job["run_dir"])
+                    _update_job(
+                        cached_job["id"], status="queued", stage="video_queued",
+                        completed=0, total=1, creative_config=creative_config,
+                        error=None,
+                    )
+                    threading.Thread(
+                        target=_generate_video,
+                        args=(
+                            cached_job["id"], run_dir, "action",
+                            character_set, creative_config,
+                        ),
+                        daemon=True,
+                    ).start()
+                    with JOBS_LOCK:
+                        payload = _public_job(JOBS[cached_job["id"]])
+                    payload["reused"] = True
+                    self._json(202, payload)
+                    return
                 payload = _public_job(cached_job)
                 payload["reused"] = True
                 self._json(200, payload)
@@ -2278,6 +2315,8 @@ class Handler(BaseHTTPRequestHandler):
                     custom_voices,
                     _speaker_ids_for_config(creative_config),
                     episode,
+                    auto_generate_video,
+                    creative_config,
                 ),
                 daemon=True,
             ).start()
