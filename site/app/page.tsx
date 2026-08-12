@@ -51,6 +51,7 @@ type Job = {
     characters?: string[];
     placements?: Placement[];
     voices?: string[];
+    voiceAdjustments?: Array<{ speed: number; volume: number }>;
     subtitles?: SubtitleConfig;
   };
 };
@@ -194,6 +195,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [backgroundId, setBackgroundId] = useState("zoo");
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>(["duck", "dog"]);
+  const [voiceAdjustments, setVoiceAdjustments] = useState([{ speed: 1, volume: 70 }, { speed: 1, volume: 70 }]);
   const [selectedVoiceIds, setSelectedVoiceIds] = useState<string[]>(["zh_female_qiaopinv_uranus_bigtts", "zh_male_wennuanahu_uranus_bigtts"]);
   const [previewBusyVoice, setPreviewBusyVoice] = useState("");
   const [previewPlayingVoice, setPreviewPlayingVoice] = useState("");
@@ -601,6 +603,7 @@ export default function Home() {
             characters: selected.map((item) => item.actionId),
             placements,
             voices: chosenVoiceIds,
+            voiceAdjustments,
             subtitles: { font: subtitleFontId, size: subtitleSize },
           },
         }),
@@ -644,6 +647,7 @@ export default function Home() {
             characters: selected.map((item) => item.actionId),
             placements,
             voices: chosenVoiceIds,
+            voiceAdjustments,
             subtitles: { font: subtitleFontId, size: subtitleSize },
           },
         }),
@@ -712,7 +716,7 @@ export default function Home() {
             character_set: characterSet,
             episode,
             custom_voices: { HostA: defaultVoices[0].prompt, HostB: defaultVoices[1].prompt },
-            creative_config: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, subtitles: { font: subtitleFontId, size: subtitleSize } },
+            creative_config: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } },
           }),
         });
         audioJob = await audioResponse.json() as Job;
@@ -735,7 +739,7 @@ export default function Home() {
           mode: "action",
           episode,
           force: scriptDirty || subtitleDirty,
-          creative_config: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, subtitles: { font: subtitleFontId, size: subtitleSize } },
+          creative_config: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } },
         }),
       });
       const next = await videoResponse.json() as Job;
@@ -1114,6 +1118,10 @@ export default function Home() {
                     {character && <img src={character.image} alt={character.name} />}
                     <label className="host-character-select"><span>选择角色</span><select value={character?.id ?? ""} onChange={(event) => selectHostCharacter(hostIndex, event.target.value)} aria-label={`选择主持人 ${hostIndex === 0 ? "A" : "B"}`}>{characters.map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select></label>
                     {voice && <div className="host-voice-row"><label><span>推荐音色</span><select value={voice.id} onChange={(event) => setSelectedVoiceIds((current) => current.map((id, index) => index === hostIndex ? event.target.value : id))} aria-label={`主持人 ${hostIndex === 0 ? "A" : "B"} 音色`}><option value={defaultVoice?.id}>{defaultVoice?.name}（角色默认）</option>{voiceOptions.filter((option) => option.id !== defaultVoice?.id).map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select></label><button className="voice-preview-button" onClick={() => void toggleVoicePreview(voice.id)} disabled={Boolean(previewBusyVoice)}>{previewBusyVoice === voice.id ? "生成中" : previewPlayingVoice === voice.id ? "停止" : "▶ 试听"}</button></div>}
+                    <div className="voice-adjustments">
+                      <label><span>语速</span><input type="range" min="0.7" max="1.3" step="0.05" value={voiceAdjustments[hostIndex].speed} onChange={(event) => setVoiceAdjustments((current) => current.map((item, index) => index === hostIndex ? { ...item, speed: Number(event.target.value) } : item))} /><output>{voiceAdjustments[hostIndex].speed.toFixed(2)}x</output></label>
+                      <label><span>音量</span><input type="range" min="0" max="100" step="1" value={voiceAdjustments[hostIndex].volume} onChange={(event) => setVoiceAdjustments((current) => current.map((item, index) => index === hostIndex ? { ...item, volume: Number(event.target.value) } : item))} /><output>{voiceAdjustments[hostIndex].volume}%</output></label>
+                    </div>
                   </article>;
                 })}
               </div>

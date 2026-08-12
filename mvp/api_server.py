@@ -509,12 +509,28 @@ def _normalize_creative_config(raw_config) -> dict:
             for index, voice in enumerate(requested)
         ]
 
+    raw_voice_adjustments = raw.get("voiceAdjustments")
+    voice_adjustments = []
+    for index in range(2):
+        source = (
+            raw_voice_adjustments[index]
+            if isinstance(raw_voice_adjustments, list)
+            and index < len(raw_voice_adjustments)
+            and isinstance(raw_voice_adjustments[index], dict)
+            else {}
+        )
+        voice_adjustments.append({
+            "speed": _clamp_number(source.get("speed"), .7, 1.3, 1),
+            "volume": round(_clamp_number(source.get("volume"), 0, 100, 70)),
+        })
+
     return {
         "background": background,
         "characters": characters,
         "placements": placements,
         "scene": str(raw.get("scene", "balanced"))[:40],
         "voices": voices,
+        "voiceAdjustments": voice_adjustments,
         "subtitles": {"font": subtitle_font, "size": subtitle_size},
     }
 

@@ -423,3 +423,9 @@ body { background:#f7f7fa; }
 /* Retire previous summary card rules. */
 .script-structure-card { display:none; }
 @media (max-width:1450px) { .script-result-actions { grid-template-columns:1fr; }.script-highlights p { font-size:10px; } }
+/* Per-host speed and volume controls */
+.voice-adjustments { margin-top:9px; padding-top:9px; border-top:1px solid #ece9f0; }
+.voice-adjustments label { display:grid; grid-template-columns:34px minmax(0,1fr) 45px; align-items:center; gap:7px; margin-top:7px; color:#716b78; font-size:12px; }
+.voice-adjustments label:first-child { margin-top:0; }.voice-adjustments input { width:100%; accent-color:#7659eb; }.voice-adjustments output { color:#5e5865; font:11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; text-align:right; }
+.host-card-grid { flex-basis:318px; }
+@media (max-height:900px) and (min-width:1181px) { .host-card-grid { flex-basis:310px; } }
