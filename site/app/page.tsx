@@ -210,7 +210,9 @@ export default function Home() {
   const [history, setHistory] = useState<Job[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [scriptPageOpen, setScriptPageOpen] = useState(false);
-  const [projectSaved, setProjectSaved] = useState(false);
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [saveAsName, setSaveAsName] = useState("");
+  const [savedProjectName, setSavedProjectName] = useState("");
   const [scriptDirty, setScriptDirty] = useState(false);
   const [subtitleDirty, setSubtitleDirty] = useState(false);
   const [subtitleFontId, setSubtitleFontId] = useState("system");
@@ -963,7 +965,7 @@ export default function Home() {
                 <span><b>约 {episode.turns.reduce((sum, turn) => sum + turn.text.length, 0)} 字</b><small>脚本字数</small></span>
               </div>
               <div className="script-highlights"><b>脚本亮点</b><p>✓ 围绕“{episode.topic || prompt || "节目主题"}”展开，主题聚焦、对话自然</p><p>✓ 包含 Host A 与 Host B 的交替表达，结构清晰有节奏</p><p>✓ 适合两位主持人自然对话呈现，可直接进入音视频生成</p></div>
-              <div className="script-result-actions"><button onClick={() => setScriptPageOpen(true)}>▣ 查看脚本</button><button onClick={() => setScriptPageOpen(true)}>✎ 编辑</button><button className={projectSaved ? "saved" : ""} onClick={() => setProjectSaved(true)}>{projectSaved ? "✓ 已保存" : "♧ 保存到项目"}</button></div>
+              <div className="script-result-actions"><button onClick={() => setScriptPageOpen(true)}>▣ 查看脚本</button><button onClick={() => setScriptPageOpen(true)}>✎ 编辑</button><button className={savedProjectName ? "saved" : ""} onClick={() => { setSaveAsName(`${episode.topic || prompt || "未命名播客"} - 副本`); setSaveAsOpen(true); }}>{savedProjectName ? `✓ ${savedProjectName}` : "▣ 另存为"}</button></div>
             </> : <p className="script-result-waiting">输入节目主题并发送，生成结果将在这里以结构化卡片返回。</p>}
           </section>
         </aside>
@@ -1162,7 +1164,13 @@ export default function Home() {
           </div>
         </aside>
       </section>
-      {scriptPageOpen && <div className="script-page" role="dialog" aria-modal="true" aria-label="结构化脚本编辑页面">
+      {saveAsOpen && <div className="save-as-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSaveAsOpen(false)}>
+        <section className="save-as-dialog" role="dialog" aria-modal="true" aria-label="项目另存为">
+          <header><div><small>SAVE A COPY</small><h2>项目另存为</h2><p>为当前播客脚本创建一个独立副本。</p></div><button onClick={() => setSaveAsOpen(false)} aria-label="关闭另存为">×</button></header>
+          <label><span>项目名称</span><input autoFocus value={saveAsName} onChange={(event) => setSaveAsName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && saveAsName.trim()) { localStorage.setItem(`blabber-project-${Date.now()}`, JSON.stringify({ name: saveAsName.trim(), episode, creativeConfig: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } } })); setSavedProjectName(saveAsName.trim()); setSaveAsOpen(false); } }} /></label>
+          <footer><button onClick={() => setSaveAsOpen(false)}>取消</button><button className="primary" disabled={!saveAsName.trim()} onClick={() => { const name = saveAsName.trim(); if (!name) return; localStorage.setItem(`blabber-project-${Date.now()}`, JSON.stringify({ name, episode, creativeConfig: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } } })); setSavedProjectName(name); setSaveAsOpen(false); }}>另存为副本</button></footer>
+        </section>
+      </div>}      {scriptPageOpen && <div className="script-page" role="dialog" aria-modal="true" aria-label="结构化脚本编辑页面">
         <section>
           <header><div><small>STRUCTURED PODCAST SCRIPT</small><h2>{episode.topic || "播客脚本"}</h2><p>{episode.turns.length} 段结构化对话，可修改主持人、内容及段落顺序。</p></div><button onClick={() => setScriptPageOpen(false)} aria-label="关闭脚本页面">×</button></header>
           <div className="script-page-stats"><span><b>{episode.turns.length}</b><small>对话段落</small></span><span><b>{episode.turns.filter((turn) => turn.speaker === "HostA").length}</b><small>Host A</small></span><span><b>{episode.turns.filter((turn) => turn.speaker === "HostB").length}</b><small>Host B</small></span></div>
