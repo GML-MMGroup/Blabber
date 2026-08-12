@@ -429,3 +429,9 @@ body { background:#f7f7fa; }
 .voice-adjustments label:first-child { margin-top:0; }.voice-adjustments input { width:100%; accent-color:#7659eb; }.voice-adjustments output { color:#5e5865; font:11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; text-align:right; }
 .host-card-grid { flex-basis:318px; }
 @media (max-height:900px) and (min-width:1181px) { .host-card-grid { flex-basis:310px; } }
+/* Larger and taller host portraits */
+.host-select-card > img { flex:0 0 190px; height:190px; min-height:190px; object-fit:contain; object-position:center bottom; }
+.host-card-grid { flex-basis:420px; }
+.asset-scroll .host-selector-section { min-height:590px; }
+@media (max-height:900px) and (min-width:1181px) { .host-select-card > img { flex-basis:165px; height:165px; min-height:165px; } .host-card-grid { flex-basis:390px; } }
+@media (max-width:1450px) and (min-width:1181px) { .host-select-card > img { flex-basis:160px; height:160px; min-height:160px; } }
