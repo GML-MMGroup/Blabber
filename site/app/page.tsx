@@ -917,7 +917,7 @@ export default function Home() {
           <button onClick={() => void generatePodcastVideo()} disabled={busy || !scriptReady || selected.length < 2 || !subtitleFontReady}><i>2</i><b>{videoActive || audioActive ? "正在生成" : "生成视频"}</b><small>直接生成音频和视频</small><em>✦</em></button>
         </nav>
         <aside className="script-column">
-          <div className="panel-heading conversation-heading"><span>✦</span><div><b>新对话</b><small>描述主题并确认对白内容</small></div><button className={historyOpen ? "active" : ""} onClick={() => setHistoryOpen((current) => !current)}>▣ 历史对话</button></div>
+          <div className="panel-heading conversation-heading"><span>✦</span><div><b>新对话</b><small>描述主题并确认对白内容</small></div><button className={historyOpen ? "active" : ""} onClick={() => { setHistoryOpen(true); void loadHistory(); }}>▣ 历史对话</button></div>
           <div className="prompt-card">
             <div className="prompt-label"><span>✦</span>{sourceFile ? " 为文档补充节目标题（可选）" : " 描述你想制作的节目"}</div>
             <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={3} aria-label="播客主题" />
@@ -948,18 +948,6 @@ export default function Home() {
                 if (sourceFileInput.current) sourceFileInput.current.value = "";
               }} aria-label="移除文件">×</button></div>}
           </div>
-
-          <section className={`history-panel ${historyOpen ? "open" : ""}`} aria-label="历史对话">
-            <header><b>历史对话</b><button onClick={() => void loadHistory()}>刷新</button></header>
-            <div>
-              {history.filter((item) => item.audio_url).slice(0, 20).map((item) => <button className={job?.id === item.id ? "active" : ""} onClick={() => restoreHistory(item)} key={item.id}>
-                <span><b>{item.episode?.topic || item.topic || item.prompt || item.file_name || "未命名播客"}</b><small>{item.file_name || `${item.episode?.turns?.length ?? item.clips?.length ?? 0} 个切片`}</small></span>
-                <time>{item.updated_at ? new Date(item.updated_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}</time>
-              </button>)}
-              {!history.some((item) => item.audio_url) && <p>完成一次生成后，可在这里直接恢复，避免重复请求。</p>}
-            </div>
-          </section>
-
           <div className="script-editor-head">
             <label>{audioActive ? "正在接收脚本切片…" : episode.turns.length ? "脚本和音频已生成" : "生成后显示脚本切片"}</label>
             <span>{episode.turns.length} 句</span>
@@ -1170,7 +1158,18 @@ export default function Home() {
           </div>
         </aside>
       </section>
-      {configOpen && <div className="config-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setConfigOpen(false)}>
+      {historyOpen && <div className="history-page" role="dialog" aria-modal="true" aria-label="历史对话页面">
+        <section>
+          <header><div><small>BLABBER ARCHIVE</small><h2>历史对话</h2><p>浏览已生成的播客项目，点击任意记录恢复到创作工作台。</p></div><button onClick={() => setHistoryOpen(false)} aria-label="关闭历史对话">×</button></header>
+          <div className="history-page-toolbar"><b>全部对话</b><button onClick={() => void loadHistory()}>↻ 刷新列表</button></div>
+          <div className="history-page-list">
+            {history.filter((item) => item.audio_url).map((item) => <button className={job?.id === item.id ? "active" : ""} onClick={() => { restoreHistory(item); setHistoryOpen(false); }} key={item.id}>
+              <span className="history-page-icon">♫</span><span><b>{item.episode?.topic || item.topic || item.prompt || item.file_name || "未命名播客"}</b><small>{item.file_name || `${item.episode?.turns?.length ?? item.clips?.length ?? 0} 个切片`} · {item.video_url ? "视频已生成" : "音频已生成"}</small></span><time>{item.updated_at ? new Date(item.updated_at).toLocaleString("zh-CN") : ""}</time><em>打开 →</em>
+            </button>)}
+            {!history.some((item) => item.audio_url) && <div className="history-page-empty"><i>⌁</i><b>暂无历史对话</b><p>完成一次播客生成后，项目会自动保存在这里。</p></div>}
+          </div>
+        </section>
+      </div>}      {configOpen && <div className="config-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setConfigOpen(false)}>
         <section className="config-dialog" role="dialog" aria-modal="true" aria-label="服务环境变量配置">
           <header>
             <div><small>PODCAST TTS</small><h2>服务环境配置</h2><p>配置保存到本机 <code>mvp/.env</code>，密钥不会回显到网页。</p></div>
