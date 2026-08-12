@@ -965,7 +965,7 @@ export default function Home() {
                 <span><b>约 {episode.turns.reduce((sum, turn) => sum + turn.text.length, 0)} 字</b><small>脚本字数</small></span>
               </div>
               <div className="script-highlights"><b>脚本亮点</b><p>✓ 围绕“{episode.topic || prompt || "节目主题"}”展开，主题聚焦、对话自然</p><p>✓ 包含 Host A 与 Host B 的交替表达，结构清晰有节奏</p><p>✓ 适合两位主持人自然对话呈现，可直接进入音视频生成</p></div>
-              <div className="script-result-actions"><button onClick={() => setScriptPageOpen(true)}>▣ 查看脚本</button><button onClick={() => setScriptPageOpen(true)}>✎ 编辑</button><button className={savedProjectName ? "saved" : ""} onClick={() => { setSaveAsName(`${episode.topic || prompt || "未命名播客"} - 副本`); setSaveAsOpen(true); }}>{savedProjectName ? `✓ ${savedProjectName}` : "▣ 另存为"}</button></div>
+              <div className="script-result-actions"><button onClick={() => setScriptPageOpen(true)}>▣ 查看脚本</button><button onClick={() => setScriptPageOpen(true)}>✎ 编辑</button><button className={savedProjectName ? "saved" : ""} onClick={() => { setSaveAsName(`${episode.topic || prompt || "未命名播客"} - 副本`); setSaveAsOpen(true); }}>{savedProjectName ? "✓ 已保存到项目" : "♧ 保存到项目"}</button></div>
             </> : <p className="script-result-waiting">输入节目主题并发送，生成结果将在这里以结构化卡片返回。</p>}
           </section>
         </aside>
