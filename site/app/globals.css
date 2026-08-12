@@ -529,3 +529,34 @@ body { background:#f7f7fa; }
 .more-scenes-list i { display:none; }
 .more-scenes-list .selected i { display:grid; position:absolute; top:13px; right:13px; width:24px; height:24px; place-items:center; border-radius:50%; background:var(--violet); color:#fff; font-style:normal; }
 @media (max-width:700px) { .more-scenes-backdrop { padding:10px; } .more-scenes-list { grid-template-columns:repeat(2,minmax(0,1fr)); padding:14px; } }
+/* Compact the one-row scene rail and let the full preview define its height. */
+@media (min-width:1181px) {
+  .studio-layout {
+    height:auto;
+    grid-template-rows:76px 148px 0 auto;
+    overflow:visible;
+  }
+  .asset-scroll .asset-section:nth-child(1) {
+    align-self:start;
+    height:148px;
+    min-height:148px;
+    padding-top:12px;
+    padding-bottom:12px;
+    overflow:visible;
+  }
+  .asset-scroll .asset-section:nth-child(1)::before { margin-bottom:7px; }
+  .asset-scroll .asset-section:nth-child(1) .background-grid { align-items:stretch; }
+  .asset-scroll .asset-section:nth-child(1) .background-grid > button { height:78px; }
+  .preview-column {
+    grid-row:3/5;
+    align-self:start;
+    height:auto;
+    min-height:0;
+    overflow:visible;
+  }
+  .preview-column .canvas-wrap {
+    width:100%;
+    height:auto;
+    overflow:visible;
+  }
+}
