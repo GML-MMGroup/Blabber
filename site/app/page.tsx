@@ -1132,10 +1132,8 @@ export default function Home() {
                   </article>;
                 })}
               </div>
-            </section>
-
-            <section className="asset-section host-position-section">
-              <div className="position-section-title"><b>主持人位置调整</b><small>分别调整左右主持人的位置和大小</small></div>
+              <div className="host-position-section">
+                <div className="position-section-title"><b>主持人位置调整</b><small>分别调整左右主持人的位置和大小</small></div>
               <div className="position-card-grid">{selected.map((item, index) => {
                 const placement = placements[index] ?? defaultPlacements[index];
                 return <div className="placement-card" key={item.id}>
@@ -1145,6 +1143,7 @@ export default function Home() {
                   <label>大小 <input type="range" min=".6" max="1.45" step=".01" value={placement.scale} onChange={(event) => updatePlacement(index, "scale", Number(event.target.value))} /><output>{Math.round(placement.scale * 100)}%</output></label>
                 </div>;
               })}</div>
+            </div>
             </section>
 
             <section className="asset-section subtitle-controls" aria-label="字幕预览设置">

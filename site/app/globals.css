@@ -337,3 +337,13 @@ body { background:#f7f7fa; }
 .studio-layout { grid-template-rows:76px 250px 122px minmax(250px,1fr); }
 .host-select-card > img { flex-basis:92px; height:92px; min-height:92px; }
 @media (max-height:820px) and (min-width:1181px) { .studio-layout { grid-template-rows:70px 242px 116px minmax(230px,1fr); } .host-select-card > img { flex-basis:84px; height:84px; min-height:84px; } }
+/* Unified host module: selection, voice and placement */
+.asset-scroll .host-selector-section { grid-column:2; grid-row:2/5; display:flex; flex-direction:column; overflow:auto!important; }
+.asset-scroll .scene-selector-section { grid-area:scenes; }
+.asset-scroll .subtitle-controls { grid-area:subtitles; }
+.asset-scroll .subtitle-controls::before { content:none!important; }
+.host-card-grid { flex:0 0 250px; }
+.host-position-section { margin-top:14px; padding-top:15px; border-top:1px solid #e8e6ed; }
+.host-position-section .position-section-title { margin-bottom:10px; }
+@media (max-height:820px) and (min-width:1181px) { .host-card-grid { flex-basis:242px; } }
+@media (max-width:1180px) { .asset-scroll .host-selector-section { grid-area:hosts; } }
