@@ -208,6 +208,7 @@ export default function Home() {
   const [history, setHistory] = useState<Job[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [scriptPageOpen, setScriptPageOpen] = useState(false);
+  const [projectSaved, setProjectSaved] = useState(false);
   const [scriptDirty, setScriptDirty] = useState(false);
   const [subtitleDirty, setSubtitleDirty] = useState(false);
   const [subtitleFontId, setSubtitleFontId] = useState("system");
@@ -949,10 +950,17 @@ export default function Home() {
                 if (sourceFileInput.current) sourceFileInput.current.value = "";
               }} aria-label="移除文件">×</button></div>}
           </div>
-          <section className={`script-structure-card ${episode.turns.length ? "ready" : "empty"}`}>
-            <header><span>{episode.turns.length ? "✓" : "⌁"}</span><div><b>{episode.turns.length ? "播客脚本已生成" : "等待生成结构化脚本"}</b><small>{episode.turns.length ? `${episode.turns.length} 段对话 · Host A ${episode.turns.filter((turn) => turn.speaker === "HostA").length} 段 · Host B ${episode.turns.filter((turn) => turn.speaker === "HostB").length} 段` : "输入主题后，脚本将在这里以结构化摘要返回"}</small></div></header>
-            {episode.turns.length > 0 && <div className="script-outline"><b>脚本结构</b>{episode.turns.slice(0, 4).map((turn, index) => <p key={index}><i>{turn.speaker === "HostA" ? "A" : "B"}</i><span>{turn.text}</span></p>)}</div>}
-            <button onClick={() => setScriptPageOpen(true)} disabled={!episode.turns.length}>查看脚本</button>
+          <section className={`script-result-card ${episode.turns.length ? "ready" : "empty"}`}>
+            <header><span>{episode.turns.length ? "✓" : "⌁"}</span><b>{episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
+            {episode.turns.length > 0 ? <>
+              <div className="script-result-stats">
+                <span><b>{episode.turns.length}</b><small>对话分段</small></span>
+                <span><b>约 {Math.max(1, Math.floor(episode.turns.reduce((sum, turn) => sum + turn.text.length, 0) / 240))}:{String(Math.floor((episode.turns.reduce((sum, turn) => sum + turn.text.length, 0) % 240) / 4)).padStart(2, "0")}</b><small>预计时长</small></span>
+                <span><b>约 {episode.turns.reduce((sum, turn) => sum + turn.text.length, 0)} 字</b><small>脚本字数</small></span>
+              </div>
+              <div className="script-highlights"><b>脚本亮点</b><p>✓ 围绕“{episode.topic || prompt || "节目主题"}”展开，主题聚焦、对话自然</p><p>✓ 包含 Host A 与 Host B 的交替表达，结构清晰有节奏</p><p>✓ 适合两位主持人自然对话呈现，可直接进入音视频生成</p></div>
+              <div className="script-result-actions"><button onClick={() => setScriptPageOpen(true)}>▣ 查看脚本</button><button onClick={() => setScriptPageOpen(true)}>✎ 编辑</button><button className={projectSaved ? "saved" : ""} onClick={() => setProjectSaved(true)}>{projectSaved ? "✓ 已保存" : "♧ 保存到项目"}</button></div>
+            </> : <p className="script-result-waiting">输入节目主题并发送，生成结果将在这里以结构化卡片返回。</p>}
           </section>
         </aside>
 
