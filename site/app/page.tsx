@@ -1139,10 +1139,8 @@ export default function Home() {
                 </div>;
               })}</div>
             </div>
-            </section>
-
-            <section className="asset-section subtitle-controls" aria-label="字幕预览设置">
-              <div className="section-title"><span><b>字</b>字幕预览</span><small>画面实时更新</small></div>
+              <div className="subtitle-controls embedded-subtitle-controls" aria-label="字幕预览设置">
+                <div className="section-title"><span><b>字</b>字幕预览</span><small>画面实时更新</small></div>
               <label className="subtitle-font-control">
                 <span>字体</span>
                 <select value={subtitleFontId} onChange={(event) => updateSubtitleFont(event.target.value)} aria-label="字幕字体">
@@ -1160,6 +1158,7 @@ export default function Home() {
                 <output>{subtitleSize}px</output>
               </label>
               <p className={fontMessage.includes("失败") ? "font-message error" : "font-message"}>{fontMessage || (subtitleFontReady ? "当前字体可用于预览和视频合成。" : "此字体尚未下载，预览暂用系统字体。")}</p>
+              </div>
             </section>
           </div>
         </aside>
