@@ -455,6 +455,19 @@ export default function Home() {
     }));
   }
 
+  function selectHostCharacter(hostIndex: 0 | 1, characterId: string) {
+    const next = [...selectedCharacters];
+    const otherIndex = hostIndex === 0 ? 1 : 0;
+    if (next[otherIndex] === characterId) next[otherIndex] = next[hostIndex];
+    next[hostIndex] = characterId;
+    const normalized = next.slice(0, 2);
+    setSelectedCharacters(normalized);
+    setSelectedVoiceIds((current) => normalized.map((id, index) => {
+      if (index !== hostIndex && id === selectedCharacters[index]) return current[index];
+      const character = characters.find((item) => item.id === id);
+      return voices.find((voice) => voice.actionId === character?.actionId)?.id ?? voices[0].id;
+    }));
+  }
   function updatePlacement(index: number, key: keyof Placement, value: number) {
     setPlacements((current) => current.map((item, placementIndex) => placementIndex === index ? { ...item, [key]: value } : item));
   }
@@ -1105,32 +1118,33 @@ export default function Home() {
               </div>
             </section>
 
-            <section className="asset-section">
-              <p className="section-help compact">最多选择两位；再次点击取消。第一位在左，第二位在右。</p>
-              <div className="character-grid">
-                {characters.map((item) => { const order = selectedCharacters.indexOf(item.id); return <button className={order >= 0 ? "selected" : ""} onClick={() => chooseCharacter(item.id)} key={item.id}><img src={item.image} alt={item.name} />{order >= 0 && <i>{order + 1}</i>}</button>; })}
+            <section className="asset-section host-selector-section">
+              <div className="host-card-grid">
+                {([0, 1] as const).map((hostIndex) => {
+                  const character = selected[hostIndex];
+                  const defaultVoice = voices.find((item) => item.actionId === character?.actionId);
+                  const voice = voiceOptions.find((item) => item.id === selectedVoiceIds[hostIndex]) ?? defaultVoice;
+                  return <article className={`host-select-card ${hostIndex === 0 ? "host-a" : "host-b"}`} key={hostIndex}>
+                    <header><span><b>主持人 {hostIndex === 0 ? "A" : "B"}</b><small>{hostIndex === 0 ? "左侧" : "右侧"}</small></span><i>✓</i></header>
+                    {character && <img src={character.image} alt={character.name} />}
+                    <label className="host-character-select"><span>选择角色</span><select value={character?.id ?? ""} onChange={(event) => selectHostCharacter(hostIndex, event.target.value)} aria-label={`选择主持人 ${hostIndex === 0 ? "A" : "B"}`}>{characters.map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select></label>
+                    {voice && <div className="host-voice-row"><label><span>推荐音色</span><select value={voice.id} onChange={(event) => setSelectedVoiceIds((current) => current.map((id, index) => index === hostIndex ? event.target.value : id))} aria-label={`主持人 ${hostIndex === 0 ? "A" : "B"} 音色`}><option value={defaultVoice?.id}>{defaultVoice?.name}（角色默认）</option>{voiceOptions.filter((option) => option.id !== defaultVoice?.id).map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select></label><button className="voice-preview-button" onClick={() => void toggleVoicePreview(voice.id)} disabled={Boolean(previewBusyVoice)}>{previewBusyVoice === voice.id ? "生成中" : previewPlayingVoice === voice.id ? "停止" : "▶ 试听"}</button></div>}
+                  </article>;
+                })}
               </div>
-              {selected.map((item, index) => {
+            </section>
+
+            <section className="asset-section host-position-section">
+              <div className="position-section-title"><b>主持人位置调整</b><small>分别调整左右主持人的位置和大小</small></div>
+              <div className="position-card-grid">{selected.map((item, index) => {
                 const placement = placements[index] ?? defaultPlacements[index];
                 return <div className="placement-card" key={item.id}>
-                  <div><img src={item.image} alt="" /><span><b>{index === 0 ? "左侧" : "右侧"} · {item.name}</b><small>位置与大小</small></span></div>
+                  <div><img src={item.image} alt="" /><span><b>Host {index === 0 ? "A" : "B"} · {item.name}</b><small>{index === 0 ? "左侧主持人" : "右侧主持人"}</small></span></div>
                   <label>水平 <input type="range" min="0" max="70" value={placement.x} onChange={(event) => updatePlacement(index, "x", Number(event.target.value))} /><output>{placement.x}%</output></label>
                   <label>高度 <input type="range" min="-15" max="20" value={placement.y} onChange={(event) => updatePlacement(index, "y", Number(event.target.value))} /><output>{placement.y}</output></label>
                   <label>大小 <input type="range" min=".6" max="1.45" step=".01" value={placement.scale} onChange={(event) => updatePlacement(index, "scale", Number(event.target.value))} /><output>{Math.round(placement.scale * 100)}%</output></label>
                 </div>;
-              })}
-            </section>
-
-            <section className="asset-section">
-              {([0, 1] as const).map((hostIndex) => {
-                const character = selected[hostIndex];
-                const defaultVoice = voices.find((item) => item.actionId === character?.actionId);
-                const voice = voiceOptions.find((item) => item.id === selectedVoiceIds[hostIndex]) ?? defaultVoice;
-                return <div className="voice-select" key={hostIndex}>
-                  <label>{hostIndex === 0 ? "Host A · 左侧" : "Host B · 右侧"}</label>
-                  <div>{voice && <><div className="voice-control"><select value={voice.id} onChange={(event) => setSelectedVoiceIds((current) => current.map((id, index) => index === hostIndex ? event.target.value : id))} aria-label={`${hostIndex === 0 ? "Host A" : "Host B"} 音色`}><option value={defaultVoice?.id}>{defaultVoice?.name}（角色默认）</option>{voiceOptions.filter((option) => option.id !== defaultVoice?.id).map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select><button className="voice-preview-button" onClick={() => void toggleVoicePreview(voice.id)} disabled={Boolean(previewBusyVoice)} aria-label={`试听${voice.name}`}>{previewBusyVoice === voice.id ? "生成中" : previewPlayingVoice === voice.id ? "停止" : "试听"}</button></div><small className="voice-detail">{voice.note}<code>{voice.id}</code></small></>}</div>
-                </div>;
-              })}
+              })}</div>
             </section>
 
             <section className="asset-section subtitle-controls" aria-label="字幕预览设置">
