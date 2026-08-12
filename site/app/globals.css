@@ -602,3 +602,25 @@ body { background:#f7f7fa; }
     align-self:stretch;
   }
 }
+/* Keep equal 14px workspace margins at the top and bottom of desktop viewports. */
+@media (min-width:1181px) {
+  .studio-layout {
+    height:calc(100vh - 64px);
+    min-height:0;
+    box-sizing:border-box;
+    grid-template-rows:76px 160px 0 minmax(0,1fr);
+    overflow:hidden;
+  }
+  .script-column,
+  .asset-scroll .asset-section.host-selector-section,
+  .preview-column {
+    height:auto;
+    align-self:stretch;
+  }
+  .preview-column {
+    overflow:hidden;
+  }
+  .preview-column .canvas-wrap {
+    max-height:100%;
+  }
+}
