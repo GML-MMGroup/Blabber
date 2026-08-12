@@ -314,3 +314,26 @@ body { background:#f7f7fa; }
 .result-links { font-size:11px; }
 @media (max-width:1500px) { .studio-layout { grid-template-columns:340px 480px minmax(460px,1fr); } }
 @media (max-width:1280px) { .studio-layout { grid-template-columns:320px 430px minmax(420px,1fr); } }
+/* First-viewport alignment with the supplied reference */
+.blabber-topbar { height:64px; }
+.studio-layout { height:calc(100vh - 64px); min-height:0; grid-template-rows:76px 240px 132px minmax(250px,1fr); }
+.workflow-steps > span,.workflow-steps > button { padding-top:10px; padding-bottom:10px; }
+.host-select-card { padding:9px; }
+.host-select-card > header { margin-bottom:6px; }
+.host-select-card > img { flex:0 0 118px; height:118px; min-height:118px; aspect-ratio:auto; }
+.host-character-select { margin-top:6px; }
+.host-character-select select,.host-voice-row select,.host-voice-row .voice-preview-button { height:34px; }
+.host-voice-row { margin-top:5px; }
+.background-grid { display:flex; flex-wrap:nowrap; gap:9px; overflow-x:auto; }
+.background-grid button { flex:0 0 112px; min-width:112px; }
+.background-grid img { aspect-ratio:16/9; }
+.asset-scroll .asset-section:nth-child(1) { overflow:hidden; }
+.asset-scroll .asset-section:nth-child(1) .background-grid { overflow-x:auto; }
+.position-card-grid .placement-card { padding:8px; }
+.preview-heading { min-height:48px; flex-basis:48px; padding-top:11px; padding-bottom:9px; }
+.canvas-wrap { padding-top:8px; }
+@media (max-height:820px) and (min-width:1181px) { .studio-layout { grid-template-rows:70px 228px 124px minmax(230px,1fr); } .host-select-card > img { flex-basis:105px; height:105px; min-height:105px; } }
+/* Keep role and voice controls visible together inside each host card */
+.studio-layout { grid-template-rows:76px 250px 122px minmax(250px,1fr); }
+.host-select-card > img { flex-basis:92px; height:92px; min-height:92px; }
+@media (max-height:820px) and (min-width:1181px) { .studio-layout { grid-template-rows:70px 242px 116px minmax(230px,1fr); } .host-select-card > img { flex-basis:84px; height:84px; min-height:84px; } }
