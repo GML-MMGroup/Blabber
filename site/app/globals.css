@@ -688,3 +688,9 @@ body { background:#f7f7fa; }
 .script-column .prompt-card{order:3;margin-top:auto}
 .script-column .script-result-card.empty{margin-left:0;width:100%}
 @media(max-width:720px){.conversation-message.user-message{width:92%}.script-column .script-result-card{margin-left:25px;width:calc(100% - 25px)}}
+/* Keep the user identity and timestamp inside the message bubble. */
+.conversation-message.user-message{border-radius:13px 5px 13px 13px;padding:9px 13px 11px;background:linear-gradient(135deg,#f1edff,#f6effc)}
+.conversation-message.user-message header{margin:0 0 5px;padding:0;background:transparent}
+.conversation-message.user-message header b{color:#635b72;font-size:11px}
+.conversation-message.user-message header time{color:#9991a8;font-size:9px}
+.conversation-message.user-message p{border-radius:0;padding:0;background:transparent}
