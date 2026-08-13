@@ -670,3 +670,12 @@ body { background:#f7f7fa; }
 .video-generate-button.is-rendering{position:relative;isolation:isolate;overflow:hidden;box-shadow:0 0 0 1px rgba(126,108,255,.24),0 8px 24px rgba(104,81,220,.2)}.video-generate-button.is-rendering::after{content:"";position:absolute;z-index:-1;inset:-55%;background:conic-gradient(transparent 0 70%,rgba(255,255,255,.92) 78%,#e872c4 84%,#7465ff 91%,transparent 100%);animation:loader-spin 2.2s linear infinite}
 @property --beam-angle{syntax:"<angle>";inherits:false;initial-value:0deg}@keyframes blabber-beam{to{--beam-angle:360deg}}@keyframes loader-breathe{50%{transform:scale(.72);filter:saturate(1.35)}}@keyframes loader-orbit{to{rotate:360deg}}@keyframes loader-sheen{55%,100%{transform:translateX(120%)}}@keyframes loader-dot{0%,70%,100%{transform:translateY(0);opacity:.55}35%{transform:translateY(-4px);opacity:1}}@keyframes loader-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.generative-loader::before,.generative-loader-orbit::before,.generative-loader-orbit i,.generate-script.is-generating::before,.script-loader-dots i,.video-generate-button.is-rendering::after{animation:none!important}.generative-loader-track i{transition:none}}
+/* Window the script editor and history archive like the scene-library dialog. */
+.script-page,.history-page{position:fixed;z-index:130;inset:0;display:grid;place-items:center;overflow:hidden;padding:24px;background:rgba(25,21,36,.55);backdrop-filter:blur(7px)}
+.script-page>section,.history-page>section{width:min(920px,94vw);height:auto;min-height:0;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.8);border-radius:18px;background:#fff;box-shadow:0 30px 90px rgba(25,20,45,.32)}
+.script-page>section>header,.history-page>section>header{flex:0 0 auto;padding:22px 24px 18px}
+.script-page header h2,.history-page header h2{margin:5px 0 4px;font-size:24px}
+.script-page-stats,.history-page-toolbar{flex:0 0 auto;padding-left:24px;padding-right:24px}
+.script-page-list,.history-page-list{flex:1 1 auto;min-height:0;overflow-y:auto;padding-left:24px;padding-right:24px}
+.script-page>section>footer{flex:0 0 auto;padding-left:24px;padding-right:24px;background:#fff}
+@media(max-width:720px){.script-page,.history-page{inset:0;padding:10px}.script-page>section,.history-page>section{width:100%;max-height:94vh}.script-page>section>header,.history-page>section>header,.script-page-list,.history-page-list,.script-page>section>footer,.script-page-stats,.history-page-toolbar{padding-left:15px;padding-right:15px}}

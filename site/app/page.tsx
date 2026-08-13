@@ -1180,8 +1180,7 @@ export default function Home() {
           <label><span>项目名称</span><input autoFocus value={saveAsName} onChange={(event) => setSaveAsName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && saveAsName.trim()) { localStorage.setItem(`blabber-project-${Date.now()}`, JSON.stringify({ name: saveAsName.trim(), episode, creativeConfig: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } } })); setSavedProjectName(saveAsName.trim()); setSaveAsOpen(false); } }} /></label>
           <footer><button onClick={() => setSaveAsOpen(false)}>取消</button><button className="primary" disabled={!saveAsName.trim()} onClick={() => { const name = saveAsName.trim(); if (!name) return; localStorage.setItem(`blabber-project-${Date.now()}`, JSON.stringify({ name, episode, creativeConfig: { background: background.id, characters: selected.map((item) => item.actionId), placements, voices: effectiveVoiceIds, voiceAdjustments, subtitles: { font: subtitleFontId, size: subtitleSize } } })); setSavedProjectName(name); setSaveAsOpen(false); }}>另存为副本</button></footer>
         </section>
-      </div>}      {scriptPageOpen && <div className="script-page" role="dialog" aria-modal="true" aria-label="结构化脚本编辑页面">
-        <section>
+      </div>}      {scriptPageOpen && <div className="script-page" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setScriptPageOpen(false)}><section role="dialog" aria-modal="true" aria-label="结构化脚本编辑窗口">
           <header><div><small>STRUCTURED PODCAST SCRIPT</small><h2>{episode.topic || "播客脚本"}</h2><p>{episode.turns.length} 段结构化对话，可修改主持人、内容及段落顺序。</p></div><button onClick={() => setScriptPageOpen(false)} aria-label="关闭脚本页面">×</button></header>
           <div className="script-page-stats"><span><b>{episode.turns.length}</b><small>对话段落</small></span><span><b>{episode.turns.filter((turn) => turn.speaker === "HostA").length}</b><small>Host A</small></span><span><b>{episode.turns.filter((turn) => turn.speaker === "HostB").length}</b><small>Host B</small></span></div>
           <div className="script-page-list">
@@ -1191,8 +1190,8 @@ export default function Home() {
           </div>
           <footer><span>{audioReady ? "音频已生成，如需修改请重新开始音频生成。" : "修改内容会自动同步到视频字幕。"}</span><button onClick={() => setScriptPageOpen(false)}>保存并返回</button></footer>
         </section>
-      </div>}      {historyOpen && <div className="history-page" role="dialog" aria-modal="true" aria-label="历史对话页面">
-        <section>
+      </div>}      {historyOpen && <div className="history-page" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setHistoryOpen(false)}>
+        <section role="dialog" aria-modal="true" aria-label="历史对话窗口">
           <header><div><small>BLABBER ARCHIVE</small><h2>历史对话</h2><p>浏览已生成的播客项目，点击任意记录恢复到创作工作台。</p></div><button onClick={() => setHistoryOpen(false)} aria-label="关闭历史对话">×</button></header>
           <div className="history-page-toolbar"><b>全部对话</b><button onClick={() => void loadHistory()}>↻ 刷新列表</button></div>
           <div className="history-page-list">
