@@ -146,7 +146,7 @@ class PodcastResult:
 def _max_reasonable_clip_seconds(text: str) -> float:
     """A generous guardrail for corrupt/mis-bounded PodcastTTS rounds."""
     compact_length = len("".join(text.split()))
-    return max(20.0, compact_length * 0.75 + 8.0)
+    return max(60.0, compact_length * 0.75 + 8.0)
 
 def _validate_clip_duration(path: Path, text: str) -> None:
     duration_seconds = len(AudioSegment.from_file(path)) / 1000.0
