@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import websockets
+from pydub import AudioSegment
 
 from .compose import compose_episode
 from .schema import Episode, Turn
@@ -142,6 +143,22 @@ class PodcastResult:
     provider_audio_url: str | None = None
 
 
+def _max_reasonable_clip_seconds(text: str) -> float:
+    """A generous guardrail for corrupt/mis-bounded PodcastTTS rounds."""
+    compact_length = len("".join(text.split()))
+    return max(20.0, compact_length * 0.75 + 8.0)
+
+def _validate_clip_duration(path: Path, text: str) -> None:
+    duration_seconds = len(AudioSegment.from_file(path)) / 1000.0
+    maximum = _max_reasonable_clip_seconds(text)
+    if duration_seconds > maximum:
+        raise RuntimeError(
+            "PodcastTTS 切片时长异常，可重试："
+            f"{path.name} 为 {duration_seconds:.3f} 秒，"
+            f"文本仅 {len(''.join(text.split()))} 字，允许上限 {maximum:.3f} 秒"
+        )
+
+
 class VolcenginePodcastTTS:
     """Direct PodcastTTS client for the Volcengine V3 WebSocket API."""
 
@@ -184,6 +201,8 @@ class VolcenginePodcastTTS:
             "connectionclosederror",
             "keepalive ping timeout",
             "read result timeout",
+            "切片时长异常",
+            "轮次边界异常",
         ))
 
     async def generate(
@@ -369,11 +388,16 @@ class VolcenginePodcastTTS:
                     message.type == MsgType.AUDIO_ONLY_SERVER
                     and message.event == Event.PODCAST_ROUND_RESPONSE
                 ):
-                    round_audio.extend(message.payload)
+                    # Ignore audio outside an announced round so it cannot leak into a clip.
+                    if current_turn is not None:
+                        round_audio.extend(message.payload)
                     continue
                 if message.type != MsgType.FULL_SERVER_RESPONSE:
                     continue
                 if message.event == Event.PODCAST_ROUND_START:
+                    if current_turn is not None:
+                        raise RuntimeError("PodcastTTS 轮次边界异常，可重试：上一轮未结束")
+                    round_audio.clear()
                     data = _json_payload(message)
                     provider_speaker = str(data.get("speaker") or "speaker")
                     if provider_speaker not in speaker_names:
@@ -409,6 +433,7 @@ class VolcenginePodcastTTS:
                         index = len(clips)
                         clip_path = clips_dir / f"{index:02d}_{current_turn.speaker}.mp3"
                         clip_path.write_bytes(round_audio)
+                        _validate_clip_duration(clip_path, current_turn.text)
                         clips.append({
                             "index": index,
                             "speaker": current_turn.speaker,
@@ -425,6 +450,8 @@ class VolcenginePodcastTTS:
                             "turns": [asdict(turn) for turn in turns],
                             "clips": list(clips),
                         })
+                    round_audio.clear()
+                    current_turn = None
                     continue
                 if message.event == Event.PODCAST_END:
                     end_payload = _json_payload(message)
