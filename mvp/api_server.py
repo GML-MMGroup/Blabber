@@ -2073,7 +2073,8 @@ class Handler(BaseHTTPRequestHandler):
                 "topic": topic,
                 "speakers": _speaker_ids_for_config(creative_config),
             })
-            cached_job = _find_completed_job(fingerprint)
+            force_audio = bool(body.get("force_audio"))
+            cached_job = None if force_audio else _find_completed_job(fingerprint)
             if cached_job is not None:
                 payload = _public_job(cached_job)
                 payload["reused"] = True
@@ -2253,7 +2254,8 @@ class Handler(BaseHTTPRequestHandler):
                 "speakers": _speaker_ids_for_config(creative_config),
                 "episode": asdict(episode) if episode else None,
             })
-            cached_job = _find_completed_job(fingerprint)
+            force_audio = bool(body.get("force_audio"))
+            cached_job = None if force_audio else _find_completed_job(fingerprint)
             if cached_job is not None:
                 cached_video_config = _normalize_creative_config(
                     cached_job.get("creative_config")

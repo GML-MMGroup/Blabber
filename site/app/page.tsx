@@ -649,6 +649,7 @@ export default function Home() {
           prompt: episode.topic || prompt,
           character_set: characterSet,
           episode,
+          force_audio: true,
           custom_voices: {
             HostA: defaultVoices[0].prompt,
             HostB: defaultVoices[1].prompt,
@@ -728,6 +729,7 @@ export default function Home() {
           prompt: episode.topic || prompt,
           character_set: characterSet,
           episode,
+          force_audio: true,
           auto_generate_video: true,
           custom_voices: {
             HostA: defaultVoices[0].prompt,
