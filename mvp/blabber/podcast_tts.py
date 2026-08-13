@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import binascii
+import base64
 import inspect
 import io
 import json
@@ -10,6 +12,8 @@ from dataclasses import asdict, dataclass
 from enum import IntEnum
 from pathlib import Path
 from urllib.parse import urlparse
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 import websockets
 from pydub import AudioSegment
@@ -157,6 +161,62 @@ def _validate_clip_duration(path: Path, text: str) -> None:
             f"{path.name} 为 {duration_seconds:.3f} 秒，"
             f"文本仅 {len(''.join(text.split()))} 字，允许上限 {maximum:.3f} 秒"
         )
+
+
+def _synthesize_turn_fallback(
+    app_id: str, access_key: str, voice_id: str, text: str, output: Path
+) -> None:
+    """Replace a malformed PodcastTTS round with the same Volcengine voice."""
+    payload = json.dumps({
+        "user": {"uid": "blabber_podcast_repair"},
+        "req_params": {
+            "text": text,
+            "speaker": voice_id,
+            "audio_params": {"format": "mp3", "sample_rate": 24000},
+        },
+    }, ensure_ascii=False).encode("utf-8")
+    request = Request(
+        "https://openspeech.bytedance.com/api/v3/tts/unidirectional",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "X-Api-App-Id": app_id,
+            "X-Api-Access-Key": access_key,
+            "X-Api-Resource-Id": "seed-tts-2.0",
+            "X-Api-Request-Id": str(uuid.uuid4()),
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=60) as response:
+            response_body = response.read().decode("utf-8-sig", errors="replace")
+    except HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")[:500]
+        raise RuntimeError(f"豆包逐句 TTS HTTP {error.code}: {detail}") from error
+    except (URLError, TimeoutError) as error:
+        raise RuntimeError(f"豆包逐句 TTS 连接失败：{error}") from error
+    audio = bytearray()
+    for raw_line in response_body.splitlines():
+        line = raw_line.strip()
+        if line.lower().startswith("data:"):
+            line = line[5:].strip()
+        if not line or line == "[DONE]":
+            continue
+        event = json.loads(line)
+        code = int(float(event.get("code", 0)))
+        if code == 20000000:
+            break
+        if code != 0:
+            raise RuntimeError(f"豆包逐句 TTS 错误 {code}: {line[:300]}")
+        chunk = event.get("data")
+        if isinstance(chunk, str) and chunk.strip():
+            try:
+                audio.extend(base64.b64decode(chunk.strip()))
+            except (ValueError, binascii.Error) as error:
+                raise RuntimeError("豆包逐句 TTS 返回了无效音频") from error
+    if not audio:
+        raise RuntimeError("豆包逐句 TTS 未返回音频")
+    output.write_bytes(audio)
 
 
 class VolcenginePodcastTTS:
@@ -433,7 +493,20 @@ class VolcenginePodcastTTS:
                         index = len(clips)
                         clip_path = clips_dir / f"{index:02d}_{current_turn.speaker}.mp3"
                         clip_path.write_bytes(round_audio)
-                        _validate_clip_duration(clip_path, current_turn.text)
+                        try:
+                            _validate_clip_duration(clip_path, current_turn.text)
+                        except RuntimeError as malformed_error:
+                            voice_id = selected_speakers[0 if current_turn.speaker == "HostA" else 1]
+                            print(
+                                f"[PodcastTTS] {malformed_error}；改用豆包逐句 TTS 修复",
+                                flush=True,
+                            )
+                            await asyncio.to_thread(
+                                _synthesize_turn_fallback,
+                                self.app_id, self.access_key, voice_id,
+                                current_turn.text, clip_path,
+                            )
+                            _validate_clip_duration(clip_path, current_turn.text)
                         clips.append({
                             "index": index,
                             "speaker": current_turn.speaker,
