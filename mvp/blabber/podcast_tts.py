@@ -4,7 +4,6 @@ import asyncio
 import inspect
 import io
 import json
-import re
 import struct
 import uuid
 from dataclasses import asdict, dataclass
@@ -143,28 +142,6 @@ class PodcastResult:
     clips: list[dict]
     provider_audio_url: str | None = None
 
-
-def _normalize_opening_text(text: str) -> str:
-    """Lightly normalize only the first spoken line sent to PodcastTTS."""
-    normalized = re.sub(r"\s+", " ", text).strip()
-    normalized = re.sub(
-        r"^(?:(?:呃|嗯|啊|额|唔|诶|哎)[，,、。.!！?？…\s]*)+",
-        "",
-        normalized,
-    ).strip()
-    normalized = re.sub(r"^[，,、。.!！?？…\s]+", "", normalized)
-    return normalized or text.strip()
-
-
-def _normalized_dialogue_request(
-    nlp_texts: list[dict[str, str]] | None,
-) -> list[dict[str, str]] | None:
-    if not nlp_texts:
-        return nlp_texts
-    request_texts = [dict(item) for item in nlp_texts]
-    original = str(request_texts[0].get("text", ""))
-    request_texts[0]["text"] = _normalize_opening_text(original)
-    return request_texts
 
 def _max_reasonable_clip_seconds(text: str) -> float:
     """A generous guardrail for corrupt/mis-bounded PodcastTTS rounds."""
@@ -334,16 +311,10 @@ class VolcenginePodcastTTS:
         selected_speakers = tuple(speakers or self.DEFAULT_SPEAKERS)
         if len(selected_speakers) != 2 or not all(selected_speakers):
             raise ValueError("PodcastTTS 必须配置两个有效发音人")
-        request_nlp_texts = _normalized_dialogue_request(nlp_texts)
-        if dialogue_mode and request_nlp_texts != nlp_texts:
-            print(
-                f"[PodcastTTS] 首句已轻量规范化：{request_nlp_texts[0]['text']}",
-                flush=True,
-            )
         request_payload = {
             "input_id": f"blabber-{session_id}",
             "input_text": document_text,
-            "nlp_texts": request_nlp_texts,
+            "nlp_texts": nlp_texts,
             "prompt_text": prompt_text,
             "action": 3 if dialogue_mode else 0 if document_mode else 4,
             "use_head_music": False,
