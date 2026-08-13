@@ -679,16 +679,3 @@ body { background:#f7f7fa; }
 .script-page-list,.history-page-list{flex:1 1 auto;min-height:0;overflow-y:auto;padding-left:24px;padding-right:24px}
 .script-page>section>footer{flex:0 0 auto;padding-left:24px;padding-right:24px;background:#fff}
 @media(max-width:720px){.script-page,.history-page{inset:0;padding:10px}.script-page>section,.history-page>section{width:100%;max-height:94vh}.script-page>section>header,.history-page>section>header,.script-page-list,.history-page-list,.script-page>section>footer,.script-page-stats,.history-page-toolbar{padding-left:15px;padding-right:15px}}
-/* Present the left rail as a conversation between the user and Blabber. */
-.script-column .chat-message{position:relative}
-.chat-message-author{display:flex;align-items:center;gap:8px;margin-bottom:9px;color:#504b58;font-size:13px;font-weight:900}
-.chat-message-author span,.chat-message-author img{width:27px;height:27px;display:grid;place-items:center;border-radius:9px;object-fit:cover}
-.chat-message-author.user{justify-content:flex-end}.chat-message-author.user span{order:2;background:linear-gradient(135deg,#7664ef,#a75be1);color:#fff;font-size:11px}.chat-message-author.user b{order:1}
-.chat-message-author.blabber img{border:1px solid #e0ddec;box-shadow:0 3px 9px rgba(68,53,110,.12)}
-.script-column .chat-message-user{width:94%;align-self:flex-end;border-color:#ddd7f5;background:linear-gradient(145deg,#fbfaff,#f5f2ff);border-top-right-radius:5px}
-.script-column .chat-message-user::after{content:"";position:absolute;top:38px;right:-7px;width:14px;height:14px;border-top:1px solid #ddd7f5;border-right:1px solid #ddd7f5;background:#f7f4ff;transform:rotate(45deg)}
-.script-column .chat-message-blabber{width:96%;align-self:flex-start;border-top-left-radius:5px}
-.script-column .chat-message-blabber::before{content:"";position:absolute;z-index:0;top:38px;left:-7px;width:14px;height:14px;border-left:1px solid #d5ede2;border-bottom:1px solid #d5ede2;background:#f9fefa;transform:rotate(45deg)}
-.script-result-card>.chat-message-author{position:relative;z-index:1;margin:0;padding:13px 15px 2px}
-.script-result-card>.chat-message-author+header{padding-top:9px}
-.prompt-card>.prompt-label,.prompt-card>textarea,.prompt-card>.generation-actions,.prompt-card>.selected-document{position:relative;z-index:1}

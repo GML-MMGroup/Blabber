@@ -926,8 +926,7 @@ export default function Home() {
         </nav>
         <aside className="script-column">
           <div className="panel-heading conversation-heading"><span>✦</span><div><b>新对话</b><small>描述主题并确认对白内容</small></div><button className={historyOpen ? "active" : ""} onClick={() => { setHistoryOpen(true); void loadHistory(); }}>▣ 历史对话</button></div>
-          <div className="prompt-card chat-message chat-message-user">
-            <div className="chat-message-author user"><span>我</span><b>我</b></div>
+          <div className="prompt-card">
             <div className="prompt-label"><span>✦</span>{sourceFile ? " 为文档补充节目标题（可选）" : " 描述你想制作的节目"}</div>
             <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={3} aria-label="播客主题" />
             <div className="generation-actions">
@@ -957,8 +956,7 @@ export default function Home() {
                 if (sourceFileInput.current) sourceFileInput.current.value = "";
               }} aria-label="移除文件">×</button></div>}
           </div>
-          <section className={`script-result-card chat-message chat-message-blabber ${episode.turns.length ? "ready" : "empty"}`}>
-            <div className="chat-message-author blabber"><img src="/blabber-logo.jpg" alt="" /><b>Blabber</b></div>
+          <section className={`script-result-card ${episode.turns.length ? "ready" : "empty"}`}>
             <header><span>{episode.turns.length ? "✓" : "⌁"}</span><b>{episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
             {episode.turns.length > 0 ? <>
               <div className="script-result-stats">
