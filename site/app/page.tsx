@@ -956,6 +956,16 @@ export default function Home() {
                 if (sourceFileInput.current) sourceFileInput.current.value = "";
               }} aria-label="移除文件">×</button></div>}
           </div>
+          {(scriptActive || scriptAvailable) && <div className="conversation-thread" aria-live="polite">
+            <article className="conversation-message user-message">
+              <header><b>我</b><time>{job?.created_at ? new Date(job.created_at).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : ""}</time></header>
+              <p>{job?.prompt || episode.topic || prompt || sourceFile?.name}</p>
+            </article>
+            <article className="conversation-message assistant-message">
+              <header><img src="/blabber-logo.jpg" alt="" /><b>Blabber</b><time>{job?.updated_at ? new Date(job.updated_at).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : ""}</time></header>
+              <p>{scriptActive ? "好的，正在根据你的主题梳理节目结构和双主持人对白。" : "好的！以下是为你生成的播客脚本大纲，已包含开场、对谈和总结结构。"}</p>
+            </article>
+          </div>}
           <section className={`script-result-card ${episode.turns.length ? "ready" : "empty"}`}>
             <header><span>{episode.turns.length ? "✓" : "⌁"}</span><b>{episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
             {episode.turns.length > 0 ? <>
