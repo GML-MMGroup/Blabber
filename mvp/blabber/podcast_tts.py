@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import io
 import json
+import re
 import struct
 import uuid
 from dataclasses import asdict, dataclass
@@ -159,6 +160,28 @@ def _validate_clip_duration(path: Path, text: str) -> None:
         )
 
 
+def _remove_failed_turn_terminal_period(
+    nlp_texts: list[dict[str, str]] | None,
+    error: Exception,
+) -> tuple[list[dict[str, str]] | None, int | None]:
+    """Remove only the failed round's final full stop before retrying."""
+    if not nlp_texts or "切片时长异常" not in str(error):
+        return nlp_texts, None
+    match = re.search(r"\b(\d+)_Host[AB]\.mp3\b", str(error))
+    if match is None:
+        return nlp_texts, None
+    index = int(match.group(1))
+    if index >= len(nlp_texts):
+        return nlp_texts, None
+    retry_texts = [dict(item) for item in nlp_texts]
+    original = str(retry_texts[index].get("text", ""))
+    normalized = re.sub(r"[。.]\s*$", "", original).rstrip()
+    if normalized == original:
+        return nlp_texts, None
+    retry_texts[index]["text"] = normalized
+    return retry_texts, index
+
+
 class VolcenginePodcastTTS:
     """Direct PodcastTTS client for the Volcengine V3 WebSocket API."""
 
@@ -220,6 +243,7 @@ class VolcenginePodcastTTS:
         only_nlp_text: bool = False,
     ) -> PodcastResult:
         attempts = 3
+        retry_nlp_texts = [dict(item) for item in nlp_texts] if nlp_texts else nlp_texts
         for attempt in range(1, attempts + 1):
             try:
                 return await self._generate_once(
@@ -231,10 +255,19 @@ class VolcenginePodcastTTS:
                     input_url=input_url,
                     topic=topic,
                     speakers=speakers,
-                    nlp_texts=nlp_texts,
+                    nlp_texts=retry_nlp_texts,
                     only_nlp_text=only_nlp_text,
                 )
             except Exception as error:
+                retry_nlp_texts, normalized_index = _remove_failed_turn_terminal_period(
+                    retry_nlp_texts, error
+                )
+                if normalized_index is not None:
+                    print(
+                        f"[PodcastTTS] 切片 {normalized_index + 1} 时长异常，"
+                        "重试时移除对应脚本末尾句号",
+                        flush=True,
+                    )
                 if (
                     attempt >= attempts
                     or not self._is_retryable_stream_error(error)
