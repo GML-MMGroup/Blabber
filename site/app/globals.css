@@ -829,8 +829,3 @@ body>.app-shell,.app-shell{position:fixed;left:var(--workspace-left);top:var(--w
    history-version select control. */
 .workspace-step-2 .video-info-panel{display:flex;flex-direction:column;justify-content:center;box-sizing:border-box}
 .workspace-step-2 .generation-preview-header .generation-header-button{align-self:end}
-
-/* Animated generation-stage label below the combined progress track. */
-.generation-stage-progress.combined{grid-template-rows:auto auto}
-.generation-progress-status{grid-column:1/-1;min-height:18px;margin-top:5px;overflow:hidden;color:#6b52d5;font-size:11px;font-weight:700;line-height:1.4}
-.generation-progress-status .tl-loader,.generation-progress-status .tl-visual,.generation-progress-status .tl-copy{min-height:0;line-height:inherit}

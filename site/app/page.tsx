@@ -1124,8 +1124,8 @@ export default function Home() {
                     }}
                   ><span>{subtitlePreviewText}</span></div>
               </>
-              {(audioActive || videoActive) && <GenerativeLoader
-                label={videoActive ? (videoWaiting ? "正在准备视频素材" : "正在分段并行合成") : "正在生成主持人音频"}
+              {(audioActive || (videoActive && videoWaiting)) && <GenerativeLoader
+                label={videoWaiting ? "正在准备视频素材" : "正在生成主持人音频"}
                 progress={selectedGenerationVersion ? 100 : Math.max(audioProgress, videoProgress)}
 
               />}
