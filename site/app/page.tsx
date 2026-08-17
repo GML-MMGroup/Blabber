@@ -1218,7 +1218,7 @@ export default function Home() {
           <div className="asset-scroll">
             <section className="asset-section">
               <div className="background-grid">
-                {backgrounds.slice(0, 4).map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => setBackgroundId(item.id)} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><i>✓</i></button>)}
+                {backgrounds.slice(0, 4).map((item) => <button className={`scene-card ${backgroundId === item.id ? "selected" : ""}`} onClick={() => setBackgroundId(item.id)} key={item.id}><img src={item.thumbnail ?? item.image} alt="" /><span className="scene-card-name">{item.name}</span><i>✓</i></button>)}
                 {backgrounds.length > 4 && <button className={`more-scenes-button ${moreScenesOpen ? "active" : ""}`} onClick={() => setMoreScenesOpen((open) => !open)} aria-expanded={moreScenesOpen}><span>▦</span><b>更多场景</b></button>}
 
               </div>

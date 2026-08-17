@@ -591,6 +591,25 @@ body { background:#f7f7fa; }
     aspect-ratio:auto;
     object-fit:cover;
   }
+  .asset-scroll .asset-section:nth-child(1) .background-grid > .scene-card {
+    display:grid;
+    grid-template-rows:minmax(0,1fr) auto;
+  }
+  .asset-scroll .asset-section:nth-child(1) .background-grid > .scene-card img {
+    min-height:0;
+  }
+  .asset-scroll .asset-section:nth-child(1) .background-grid > .scene-card .scene-card-name {
+    display:block;
+    overflow:hidden;
+    padding:6px 3px 1px;
+    color:#4d4656;
+    font-size:11px;
+    font-weight:800;
+    line-height:1.2;
+    text-align:center;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
   .asset-scroll .host-selector-section {
     height:auto;
     min-height:0;
