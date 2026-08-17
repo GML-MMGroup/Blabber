@@ -2,6 +2,9 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import { InlineLoader } from "generative-loaders";
+import "generative-loaders/styles.css";
+import VideoGenerationStep from "./video-generation-step";
 
 type Speaker = "HostA" | "HostB";
 type Turn = { speaker: Speaker; text: string };
@@ -38,6 +41,8 @@ type Job = {
   source_type?: "file" | "url" | "text";
   file_name?: string;
   video_url?: string;
+  video_file_size?: number;
+  cover_url?: string;
   edited_video_url?: string;
   video_edit?: VideoEdit;
   error?: string;
@@ -195,20 +200,44 @@ function sameStringList(left: string[] | undefined, right: string[]): boolean {
 }
 
 export default function Home() {
+  useEffect(() => {
+    const designWidth = 2048;
+    const designHeight = 972;
+    const updateWorkspaceScale = () => {
+      const scale = Math.min(window.innerWidth / designWidth, window.innerHeight / designHeight);
+      const left = Math.max(0, (window.innerWidth - designWidth * scale) / 2);
+      const top = Math.max(0, (window.innerHeight - designHeight * scale) / 2);
+      document.documentElement.style.setProperty("--workspace-scale", String(scale));
+      document.documentElement.style.setProperty("--workspace-left", `${left}px`);
+      document.documentElement.style.setProperty("--workspace-top", `${top}px`);
+    };
+    updateWorkspaceScale();
+    window.addEventListener("resize", updateWorkspaceScale);
+    window.visualViewport?.addEventListener("resize", updateWorkspaceScale);
+    return () => {
+      window.removeEventListener("resize", updateWorkspaceScale);
+      window.visualViewport?.removeEventListener("resize", updateWorkspaceScale);
+    };
+  }, []);
   const [prompt, setPrompt] = useState(defaultPrompt);
+  const [workspaceStep, setWorkspaceStep] = useState<1 | 2>(1);
   const [episode, setEpisode] = useState<Episode>({ topic: "", turns: [] });
+  const [scriptSubmitting, setScriptSubmitting] = useState(false);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const sourceFileInput = useRef<HTMLInputElement>(null);
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState("");
   const [backgroundId, setBackgroundId] = useState("zoo");
   const [moreScenesOpen, setMoreScenesOpen] = useState(false);
+  const [characterPickerHost, setCharacterPickerHost] = useState<0 | 1 | null>(null);
   const [selectedCharacters, setSelectedCharacters] = useState<string[]>(["duck", "dog"]);
   const [voiceAdjustments, setVoiceAdjustments] = useState([{ speed: 1, volume: 70 }, { speed: 1, volume: 70 }]);
   const [selectedVoiceIds, setSelectedVoiceIds] = useState<string[]>(["zh_female_qiaopinv_uranus_bigtts", "zh_male_wennuanahu_uranus_bigtts"]);
   const [previewBusyVoice, setPreviewBusyVoice] = useState("");
   const [previewPlayingVoice, setPreviewPlayingVoice] = useState("");
   const voicePreviewAudio = useRef<HTMLAudioElement | null>(null);
+  const voicePreviewUrls = useRef(new Map<string, string>());
+  const voicePreviewRequests = useRef(new Map<string, Promise<string>>());
   const [placements, setPlacements] = useState<Placement[]>(defaultPlacements);
   const [configOpen, setConfigOpen] = useState(false);
   const [config, setConfig] = useState<ConfigResponse | null>(null);
@@ -217,6 +246,7 @@ export default function Home() {
   const [configBusy, setConfigBusy] = useState(false);
   const [configMessage, setConfigMessage] = useState("");
   const [history, setHistory] = useState<Job[]>([]);
+  const [selectedGenerationVersionId, setSelectedGenerationVersionId] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [scriptPageOpen, setScriptPageOpen] = useState(false);
   const [saveAsOpen, setSaveAsOpen] = useState(false);
@@ -256,17 +286,18 @@ export default function Home() {
   const videoChangesPending = scriptDirty || subtitleDirty;
   const rawSubtitlePreviewText = episode.turns.find((turn) => turn.text.trim())?.text.trim() || prompt.trim() || "欢迎来到 Blabber 动画播客";
   const subtitlePreviewText = rawSubtitlePreviewText.length > 22 ? `${rawSubtitlePreviewText.slice(0, 22)}…` : rawSubtitlePreviewText;
-  const busy = Boolean(job && !["complete", "failed"].includes(job.status));
+  const busy = scriptSubmitting || Boolean(job && !["complete", "failed"].includes(job.status));
   const audioReady = Boolean(job?.audio_url) && !audioConfigDirty;
   const scriptAvailable = episode.turns.length > 0;
   const scriptActive = Boolean(job && job.stage.startsWith("script_") && !["complete", "failed"].includes(job.status));
-  const scriptReady = scriptAvailable && !scriptActive;
+  const scriptGenerating = scriptSubmitting || scriptActive;
+  const scriptReady = scriptAvailable && !scriptGenerating;
   const videoReady = Boolean(job?.video_url) && !scriptDirty && !subtitleDirty;
   const videoStage = Boolean(job?.stage?.startsWith("video"));
   const audioActive = Boolean(job && !audioReady && !scriptActive && !videoStage && !["complete", "failed"].includes(job.status));
   const videoActive = Boolean(job && videoStage && !["complete", "failed"].includes(job.status));
   const videoWaiting = ["video_queued", "video_waiting", "video_prepare"].includes(job?.stage ?? "");
-  const scriptProgress = scriptReady ? 100 : scriptActive && job?.total ? Math.min(99, Math.round((job.completed / job.total) * 100)) : 0;
+  const scriptProgress = scriptReady ? 100 : scriptGenerating && job?.total ? Math.min(99, Math.round((job.completed / job.total) * 100)) : 0;
   const audioProgress = audioReady ? 100 : audioActive && job?.total ? Math.round((job.completed / job.total) * 100) : 0;
   const videoProgress = videoReady
     ? 100
@@ -301,11 +332,55 @@ export default function Home() {
     ));
 
   const characterSet = "cartoon";
+  const configPreviewSignature = JSON.stringify({
+    topic: episode.topic,
+    turns: episode.turns,
+    background: backgroundId,
+    characters: selectedCharacters,
+    placements,
+    voices: effectiveVoiceIds,
+    voiceAdjustments,
+    subtitles: { font: subtitleFontId, size: subtitleSize },
+  });
+  const versionInputKey = (episode.topic || prompt).trim();
+  const generationVersionJobs = ([job, ...history].filter(Boolean) as Job[]).filter((item, index, items) => {
+    const itemKey = (item.episode?.topic || item.topic || item.prompt || "").trim();
+    return Boolean(item.video_url) && Boolean(versionInputKey) && itemKey === versionInputKey
+      && items.findIndex((candidate) => candidate.id === item.id) === index;
+  });
+  const selectedGenerationVersion = selectedGenerationVersionId
+    ? generationVersionJobs.find((item) => item.id === selectedGenerationVersionId)
+    : undefined;
+  const generationVersions = generationVersionJobs.map((item) => {
+    const sceneName = backgrounds.find((candidate) => candidate.id === item.creative_config?.background)?.name ?? "默认场景";
+    const hostNames = (item.creative_config?.characters ?? []).map((actionId) => characters.find((candidate) => candidate.actionId === actionId)?.name).filter(Boolean).join(" / ");
+    const time = item.updated_at ? new Date(item.updated_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "历史版本";
+    return { id: item.id, label: `${time} · ${sceneName}${hostNames ? ` · ${hostNames}` : ""}` };
+  });
+  const generationAudioTotal = episode.turns.length || (audioActive ? job?.total ?? 0 : 0);
+  const generationAudioCompleted = audioReady ? generationAudioTotal : audioActive ? Math.min(job?.completed ?? 0, generationAudioTotal || job?.total || 0) : 0;
+  const generationVideoTotal = videoReady ? (episode.turns.length || 1) : videoActive ? (job?.total ?? episode.turns.length) : episode.turns.length;
+  const generationVideoCompleted = videoReady ? generationVideoTotal : videoActive ? Math.min(job?.completed ?? 0, generationVideoTotal || 0) : 0;
+
+  const previousConfigPreviewSignature = useRef(configPreviewSignature);
+  useEffect(() => {
+    if (previousConfigPreviewSignature.current === configPreviewSignature) return;
+    previousConfigPreviewSignature.current = configPreviewSignature;
+    setSelectedGenerationVersionId("");
+  }, [configPreviewSignature]);
+
+  useEffect(() => {
+    if (job?.id && job.video_url) setSelectedGenerationVersionId(job.id);
+  }, [job?.id, job?.video_url]);
 
   useEffect(() => {
     void loadHistory();
     void loadSubtitleFonts();
   }, []);
+
+  useEffect(() => {
+    effectiveVoiceIds.forEach((voiceId) => { void loadVoicePreview(voiceId).catch(() => undefined); });
+  }, [effectiveVoiceIds.join("|")]);
 
   useEffect(() => {
     const saved = job?.video_edit;
@@ -328,7 +403,8 @@ export default function Home() {
     stream.onmessage = (event) => {
       const next = JSON.parse(event.data) as Job;
       setJob(next);
-      if (next.episode?.turns) setEpisode(next.episode);
+      // Keep the confirmed script stable while audio/video tasks publish progress events.
+      if (next.stage?.startsWith("script_") && next.episode?.turns) setEpisode(next.episode);
       if (["complete", "failed"].includes(next.status)) {
         stream.close();
         void loadHistory();
@@ -404,6 +480,12 @@ export default function Home() {
     if (sourceFileInput.current) sourceFileInput.current.value = "";
     setError("");
     setScriptDirty(false);
+    const savedBackground = item.creative_config?.background;
+    if (savedBackground && backgrounds.some((candidate) => candidate.id === savedBackground)) setBackgroundId(savedBackground);
+    const savedPlacements = item.creative_config?.placements;
+    if (savedPlacements?.length === 2) setPlacements(savedPlacements);
+    const savedVoiceAdjustments = item.creative_config?.voiceAdjustments;
+    if (savedVoiceAdjustments?.length === 2) setVoiceAdjustments(savedVoiceAdjustments);
     const savedCharacters = item.creative_config?.characters;
     if (savedCharacters?.length === 2) {
       const restored = savedCharacters.map((actionId) => characters.find((character) => character.actionId === actionId)?.id).filter(Boolean) as string[];
@@ -530,6 +612,28 @@ export default function Home() {
     }
   }
 
+  function loadVoicePreview(voiceId: string): Promise<string> {
+    const cached = voicePreviewUrls.current.get(voiceId);
+    if (cached) return Promise.resolve(cached);
+    const pending = voicePreviewRequests.current.get(voiceId);
+    if (pending) return pending;
+    const request = fetch("/api/mvp/voice-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ voice_id: voiceId }),
+    }).then(async (response) => {
+      const payload = await response.json();
+      if (!response.ok || !payload.audio_url) throw new Error(payload.error || "音色试听生成失败");
+      voicePreviewUrls.current.set(voiceId, payload.audio_url);
+      const preload = new Audio();
+      preload.preload = "auto";
+      preload.src = payload.audio_url;
+      preload.load();
+      return payload.audio_url as string;
+    }).finally(() => voicePreviewRequests.current.delete(voiceId));
+    voicePreviewRequests.current.set(voiceId, request);
+    return request;
+  }
   async function toggleVoicePreview(voiceId: string) {
     const active = voicePreviewAudio.current;
     if (active && previewPlayingVoice === voiceId && !active.paused) {
@@ -546,14 +650,8 @@ export default function Home() {
     setPreviewBusyVoice(voiceId);
     setError("");
     try {
-      const response = await fetch("/api/mvp/voice-preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voice_id: voiceId }),
-      });
-      const payload = await response.json();
-      if (!response.ok || !payload.audio_url) throw new Error(payload.error || "音色试听生成失败");
-      const audio = new Audio(payload.audio_url);
+      const audioUrl = await loadVoicePreview(voiceId);
+      const audio = new Audio(audioUrl);
       voicePreviewAudio.current = audio;
       audio.onended = () => {
         if (voicePreviewAudio.current === audio) voicePreviewAudio.current = null;
@@ -583,11 +681,14 @@ export default function Home() {
       setError("请先选择两位角色");
       return;
     }
+    const submittedPrompt = prompt;
+    setPrompt("");
+    setScriptSubmitting(true);
     try {
       const documentBody = sourceFile ? {
         file_name: sourceFile.name,
         file_base64: await fileToBase64(sourceFile),
-        topic: prompt.trim() || sourceFile.name.replace(/\.[^.]+$/, ""),
+        topic: submittedPrompt.trim() || sourceFile.name.replace(/\.[^.]+$/, ""),
         creative_config: {
           background: background.id,
           characters: selected.map((item) => item.actionId),
@@ -602,7 +703,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(documentBody ?? {
-          prompt,
+          prompt: submittedPrompt,
           script_only: true,
           character_set: characterSet,
           custom_voices: {
@@ -621,7 +722,7 @@ export default function Home() {
       });
       const next = await response.json();
       if (!response.ok) throw new Error(next.error || "脚本任务创建失败");
-      setEpisode(next.episode ?? { topic: documentBody?.topic || prompt, turns: [] });
+      setEpisode(next.episode ?? { topic: documentBody?.topic || submittedPrompt, turns: [] });
       setJob(next);
       setScriptDirty(false);
       const nextSubtitles = next.creative_config?.subtitles as SubtitleConfig | undefined;
@@ -630,7 +731,10 @@ export default function Home() {
       ));
       if (next.reused) void loadHistory();
     } catch (cause) {
+      setPrompt((current) => current || submittedPrompt);
       setError(cause instanceof Error ? cause.message : "脚本任务创建失败");
+    } finally {
+      setScriptSubmitting(false);
     }
   }
 
@@ -921,13 +1025,13 @@ export default function Home() {
         <nav className="mode-nav" aria-label="编辑模式"><span className="active">创作模式</span><button disabled>高级编辑<small>暂未开放</small></button></nav>
         <div className="topbar-tools"><button>使用指南</button><button onClick={openConfig}>服务器配置</button></div>
       </header>
-      <section className="studio-layout" id="top">
+      <section className={`studio-layout workspace-step-${workspaceStep}`} id="top">
         <nav className="workflow-steps two-step" aria-label="视频创作流程">
-          <span className="active"><i>1</i><b>播客配置</b><small>配置脚本、主持人、场景与字幕</small><em>→</em></span>
-          <button onClick={() => void generatePodcastVideo()} disabled={busy || !scriptReady || selected.length < 2 || !subtitleFontReady}><i>2</i><b>{videoActive || audioActive ? "正在生成" : "生成视频"}</b><small>直接生成音频和视频</small><em>✦</em></button>
+          <button className={workspaceStep === 1 ? "active" : ""} onClick={() => setWorkspaceStep(1)}><i>1</i><b>播客配置</b><small>配置脚本、主持人、场景与字幕</small><em>→</em></button>
+          <button className={workspaceStep === 2 ? "active generation-step" : "generation-step"} onClick={() => setWorkspaceStep(2)} disabled={!scriptReady || selected.length < 2 || !subtitleFontReady}><i>2</i><b>生成视频</b><small>直接生成音频和视频</small><em>{workspaceStep === 2 ? "✓" : "→"}</em></button>
         </nav>
         <aside className="script-column">
-          <div className="panel-heading conversation-heading"><span>✦</span><div><b>新对话</b><small>描述主题并确认对白内容</small></div><button className={historyOpen ? "active" : ""} onClick={() => { setHistoryOpen(true); void loadHistory(); }}>▣ 历史对话</button></div>
+          <div className="panel-heading conversation-heading"><span>✦</span><div><b>新对话</b><small>描述主题并确认对白内容</small></div><button className={historyOpen ? "active" : ""} onClick={() => { setHistoryOpen(true); void loadHistory(); }}><img src="/history.png" alt="" aria-hidden="true" />历史对话</button></div>
           <div className="prompt-card">
             <div className="prompt-label"><span>✦</span>{sourceFile ? " 为文档补充节目标题（可选）" : " 描述你想制作的节目"}</div>
             <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={3} aria-label="播客主题" />
@@ -951,26 +1055,26 @@ export default function Home() {
                 />
                 <span aria-label="上传文件" title="上传文件">＋</span>
               </label>
-              <button className={`generate-script ${scriptActive ? "is-generating" : ""}`} onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())} aria-label={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"} title={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"}>{scriptActive ? <span className="script-loader-dots" aria-hidden="true"><i /><i /><i /></span> : "➤"}</button>
+              <button className={`generate-script ${scriptGenerating ? "is-generating" : ""}`} onClick={generateScript} disabled={busy || selected.length < 2 || (!sourceFile && !prompt.trim())} aria-label={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"} title={scriptAvailable ? "重新生成脚本" : "发送并生成脚本"}>{scriptGenerating ? <span className="script-loader-dots" aria-hidden="true"><i /><i /><i /></span> : "➤"}</button>
             </div>
             {sourceFile && <div className="selected-document"><b>{sourceFile.name}</b><small>{formatFileSize(sourceFile.size)}</small><button onClick={() => {
                 setSourceFile(null);
                 if (sourceFileInput.current) sourceFileInput.current.value = "";
               }} aria-label="移除文件">×</button></div>}
           </div>
-          {(scriptActive || scriptAvailable) && <div className="conversation-thread" aria-live="polite">
+          {(scriptGenerating || scriptAvailable) && <div className="conversation-thread" aria-live="polite">
             <article className="conversation-message user-message">
               <header><b>我</b><time>{job?.created_at ? new Date(job.created_at).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : ""}</time></header>
               <p>{job?.prompt || episode.topic || prompt || sourceFile?.name}</p>
             </article>
             <article className="conversation-message assistant-message">
               <header><img src="/blabber-logo.jpg" alt="" /><b>Blabber</b><time>{job?.updated_at ? new Date(job.updated_at).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) : ""}</time></header>
-              <p>{scriptActive ? "好的，正在根据你的主题梳理节目结构和双主持人对白。" : "好的！以下是为你生成的播客脚本大纲，已包含开场、对谈和总结结构。"}</p>
+              <p>{scriptGenerating ? "好的，正在根据你的主题梳理节目结构和双主持人对白。" : "好的！以下是为你生成的播客脚本大纲，已包含开场、对谈和总结结构。"}</p>
             </article>
           </div>}
-          <section className={`script-result-card ${episode.turns.length ? "ready" : "empty"}`}>
-            <header><span>{episode.turns.length ? "✓" : "⌁"}</span><b>{episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
-            {episode.turns.length > 0 ? <>
+          <section className={`script-result-card ${scriptGenerating ? "generating" : episode.turns.length ? "ready" : "empty"}`}>
+            <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : <span>{episode.turns.length ? "✓" : "⌁"}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{!scriptGenerating && episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
+            {scriptGenerating ? <p className="script-result-waiting" role="status" aria-live="polite">正在梳理节目结构和双主持人对白，请稍候…</p> : episode.turns.length > 0 ? <>
               <div className="script-result-stats">
                 <span><b>{episode.turns.length}</b><small>对话分段</small></span>
                 <span><b>约 {Math.max(1, Math.floor(episode.turns.reduce((sum, turn) => sum + turn.text.length, 0) / 240))}:{String(Math.floor((episode.turns.reduce((sum, turn) => sum + turn.text.length, 0) % 240) / 4)).padStart(2, "0")}</b><small>预计时长</small></span>
@@ -986,19 +1090,7 @@ export default function Home() {
           <div className="preview-heading"><span><b>预览效果</b><small>配置结果实时呈现</small></span>{(audioActive || videoActive) && <output>{job?.stage || "正在生成"} · {Math.max(audioProgress, videoProgress)}%</output>}</div>
           <div className="canvas-wrap">
             <div className="preview-canvas" style={{ "--scene-accent": background.accent } as CSSProperties}>
-              {videoReady ? (
-                <video
-                  ref={videoRef}
-                  controls
-                  autoPlay={false}
-                  src={job?.video_url}
-                  onLoadedMetadata={(event) => loadVideoMetadata(event.currentTarget)}
-                  onTimeUpdate={(event) => updateVideoPlayhead(event.currentTarget)}
-                  onPlay={() => setTrimPlaying(true)}
-                  onPause={() => setTrimPlaying(false)}
-                >浏览器不支持视频播放。</video>
-              ) : (
-                <>
+              <>
                   <img className="scene-background" src={background.image} alt={background.name} />
                   {selected.slice(0, 2).map((character, index) => {
                     const placement = placements[index] ?? defaultPlacements[index];
@@ -1025,19 +1117,19 @@ export default function Home() {
                       fontSize: `clamp(10px, ${(subtitleSize / 19.2).toFixed(3)}cqw, 34px)`,
                     }}
                   ><span>{subtitlePreviewText}</span></div>
-                </>
-              )}
+              </>
               {(audioActive || videoActive) && <GenerativeLoader
                 label={videoActive ? (videoWaiting ? "正在准备视频素材" : "正在分段并行合成") : "正在生成主持人音频"}
-                progress={Math.max(audioProgress, videoProgress)}
+                progress={selectedGenerationVersion ? 100 : Math.max(audioProgress, videoProgress)}
+
               />}
             </div>
           </div>
 
           <div className="production-steps" aria-label="节目生成进度">
-            <article className={`status-only ${scriptReady ? "done" : scriptActive ? "active" : ""}`}>
+            <article className={`status-only ${scriptReady ? "done" : scriptGenerating ? "active" : ""}`}>
               <span className="production-index">1</span>
-              <div className="production-copy"><b>生成并确认脚本</b><small>{scriptReady ? `脚本已就绪 · ${episode.turns.length} 轮对白，可在左侧修改` : scriptActive ? `PodcastTTS 正在生成对白 · ${scriptProgress}%` : "等待从左栏生成脚本"}</small><progress value={scriptProgress} max={100} /></div>
+              <div className="production-copy"><b>生成并确认脚本</b><small>{scriptReady ? `脚本已就绪 · ${episode.turns.length} 轮对白，可在左侧修改` : scriptGenerating ? `PodcastTTS 正在生成对白 · ${scriptProgress}%` : "等待从左栏生成脚本"}</small><progress value={scriptProgress} max={100} /></div>
             </article>
             <article className={`status-only ${audioReady ? "done" : audioActive ? "active" : !scriptReady ? "locked" : ""}`}>
               <span className="production-index">2</span>
@@ -1113,7 +1205,6 @@ export default function Home() {
             </footer>
           </section>
 
-          {(error || job?.error || audioReady || videoReady) && <div className={`result-links ${error || job?.error ? "has-error" : ""}`}><b>{error || job?.error || (videoReady ? "视频已生成" : job?.reused ? "已复用历史结果，未重复调用付费接口" : "切片文本与音频已生成，可继续生成视频")}</b><span>{job?.audio_url && <a href={job.audio_url} target="_blank" rel="noreferrer">播放完整音频</a>}{job?.provider_audio_url && <a href={job.provider_audio_url} download="blabber-podcast.mp3">下载音频</a>}{job?.video_url && <a href={job.video_url}>下载视频</a>}{job?.edited_video_url && <a href={job.edited_video_url} download>下载剪辑片段</a>}</span></div>}
         </section>
 
         <aside className="assets-column">
@@ -1135,8 +1226,7 @@ export default function Home() {
                   const voice = voiceOptions.find((item) => item.id === selectedVoiceIds[hostIndex]) ?? defaultVoice;
                   return <article className={`host-select-card ${hostIndex === 0 ? "host-a" : "host-b"}`} key={hostIndex}>
                     <header><span><b>主持人 {hostIndex === 0 ? "A" : "B"}</b><small>{hostIndex === 0 ? "左侧" : "右侧"}</small></span><i>✓</i></header>
-                    {character && <img src={character.image} alt={character.name} />}
-                    <label className="host-character-select"><span>选择角色</span><select value={character?.id ?? ""} onChange={(event) => selectHostCharacter(hostIndex, event.target.value)} aria-label={`选择主持人 ${hostIndex === 0 ? "A" : "B"}`}>{characters.map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select></label>
+                    {character && <button className="host-character-trigger" onClick={() => setCharacterPickerHost(hostIndex)} aria-label={`为主持人 ${hostIndex === 0 ? "A" : "B"} 选择角色`} aria-haspopup="dialog"><img src={character.image} alt={character.name} /><span><b>{character.name}</b><small>点击更换角色</small></span><i aria-hidden="true">›</i></button>}
                     {voice && <div className="host-voice-row"><label><span>推荐音色</span><select value={voice.id} onChange={(event) => setSelectedVoiceIds((current) => current.map((id, index) => index === hostIndex ? event.target.value : id))} aria-label={`主持人 ${hostIndex === 0 ? "A" : "B"} 音色`}><option value={defaultVoice?.id}>{defaultVoice?.name}（角色默认）</option>{voiceOptions.filter((option) => option.id !== defaultVoice?.id).map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}</select></label><button className="voice-preview-button" onClick={() => void toggleVoicePreview(voice.id)} disabled={Boolean(previewBusyVoice)}>{previewBusyVoice === voice.id ? "生成中" : previewPlayingVoice === voice.id ? "停止" : "▶ 试听"}</button></div>}
                     <div className="voice-adjustments">
                       <label><span>语速</span><input type="range" min="0.7" max="1.3" step="0.05" value={voiceAdjustments[hostIndex].speed} onChange={(event) => setVoiceAdjustments((current) => current.map((item, index) => index === hostIndex ? { ...item, speed: Number(event.target.value) } : item))} /><output>{voiceAdjustments[hostIndex].speed.toFixed(2)}x</output></label>
@@ -1180,11 +1270,63 @@ export default function Home() {
             </section>
           </div>
         </aside>
+        <VideoGenerationStep
+          jobId={selectedGenerationVersion?.id}
+          videoFileSize={selectedGenerationVersion?.video_file_size}
+          coverUrl={selectedGenerationVersion?.cover_url}
+          videoUrl={selectedGenerationVersion?.video_url}
+          audioUrl={selectedGenerationVersion?.audio_url || selectedGenerationVersion?.provider_audio_url}
+          poster={background.thumbnail ?? background.image}
+          previewContent={<>
+            <img className="scene-background" src={background.image} alt={background.name} />
+            {selected.slice(0, 2).map((character, index) => {
+              const placement = placements[index] ?? defaultPlacements[index];
+              const actionSize = 700 * placement.scale;
+              return <img key={character.id} className={`canvas-character character-${index}`} src={character.actionPreview} alt={`${character.name}，${index === 0 ? "左侧" : "右侧"}`} style={{ left: `${placement.x}%`, top: `${((245 - placement.y * 8) / 1080) * 100}%`, width: `${(actionSize / 1920) * 100}%` } as CSSProperties} />;
+            })}
+            {background.foreground && <img className="scene-foreground" src={background.foreground} alt="场景前景" />}
+            <div className="on-air-pill"><i /> ON AIR</div>
+            <div className={`subtitle-preview ${subtitleFontReady ? "" : "font-missing"}`} style={{ fontFamily: selectedSubtitleFont?.family, fontSize: `clamp(10px, ${(subtitleSize / 19.2).toFixed(3)}cqw, 34px)` }}><span>{subtitlePreviewText}</span></div>
+          </>}
+          duration={0}
+          updatedAt={selectedGenerationVersion?.updated_at}
+          busy={selectedGenerationVersion ? false : busy}
+          progress={selectedGenerationVersion ? 100 : Math.max(audioProgress, videoProgress)}
+          audioCompleted={selectedGenerationVersion ? 1 : generationAudioCompleted}
+          audioTotal={selectedGenerationVersion ? 1 : generationAudioTotal}
+          videoCompleted={selectedGenerationVersion ? 1 : generationVideoCompleted}
+          videoTotal={selectedGenerationVersion ? 1 : generationVideoTotal}
+          versions={generationVersions}
+          selectedVersionId={selectedGenerationVersionId}
+          onSelectVersion={setSelectedGenerationVersionId}
+          errorMessage={selectedGenerationVersion ? "" : error || job?.error || ""}
+          configChanged={scriptDirty || subtitleDirty}
+          canGenerate={scriptReady && selected.length >= 2 && subtitleFontReady}
+          onUseLatestConfig={() => {
+            setSelectedGenerationVersionId("");
+            setWorkspaceStep(1);
+          }}
+          onUseLatestVideo={() => {
+            const latestVideo = generationVersionJobs[0];
+            if (latestVideo) setSelectedGenerationVersionId(latestVideo.id);
+          }}
+          onRegenerate={() => void generatePodcastVideo()}
+        />
       </section>
+      {characterPickerHost !== null && <div className="more-scenes-backdrop character-picker-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setCharacterPickerHost(null)}>
+        <section className="more-scenes-dialog character-picker-dialog" role="dialog" aria-modal="true" aria-label={`为主持人 ${characterPickerHost === 0 ? "A" : "B"} 选择角色`}>
+          <header><div><small>CHARACTER LIBRARY</small><h2>选择主持人 {characterPickerHost === 0 ? "A" : "B"} 的角色</h2><p>点击角色资产即可应用，当前选择已用紫色标记。</p></div><button onClick={() => setCharacterPickerHost(null)} aria-label="关闭角色资产库">×</button></header>
+          <div className="character-picker-list">{characters.map((item) => {
+            const selectedForHost = selectedCharacters[characterPickerHost] === item.id;
+            const usedByOtherHost = selectedCharacters[characterPickerHost === 0 ? 1 : 0] === item.id;
+            return <button className={selectedForHost ? "selected" : usedByOtherHost ? "used" : ""} onClick={() => { selectHostCharacter(characterPickerHost, item.id); setCharacterPickerHost(null); }} key={item.id}><img src={item.image} alt={item.name} /><span><b>{item.name}</b><small>{selectedForHost ? `当前为 Host ${characterPickerHost === 0 ? "A" : "B"}` : usedByOtherHost ? `已用于 Host ${characterPickerHost === 0 ? "B" : "A"}` : "可选择"}</small></span><i>✓</i></button>;
+          })}</div>
+        </section>
+      </div>}
       {moreScenesOpen && <div className="more-scenes-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setMoreScenesOpen(false)}>
         <section className="more-scenes-dialog" role="dialog" aria-modal="true" aria-label="更多背景场景">
           <header><div><small>SCENE LIBRARY</small><h2>更多场景</h2><p>选择一个背景场景应用到视频预览。</p></div><button onClick={() => setMoreScenesOpen(false)} aria-label="关闭更多场景">×</button></header>
-          <div className="more-scenes-list">{backgrounds.slice(4).map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => { setBackgroundId(item.id); setMoreScenesOpen(false); }} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><span>{item.name}</span><i>✓</i></button>)}</div>
+          <div className="more-scenes-list">{backgrounds.map((item) => <button className={backgroundId === item.id ? "selected" : ""} onClick={() => { setBackgroundId(item.id); setMoreScenesOpen(false); }} key={item.id}><img src={item.thumbnail ?? item.image} alt={item.name} /><span>{item.name}</span><i>✓</i></button>)}</div>
         </section>
       </div>}{saveAsOpen && <div className="save-as-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setSaveAsOpen(false)}>
         <section className="save-as-dialog" role="dialog" aria-modal="true" aria-label="项目另存为">
