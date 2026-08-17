@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { InlineLoader } from "generative-loaders";
+import "generative-loaders/styles.css";
 
 type DirectoryHandleLike = {
   name: string;
@@ -84,6 +86,7 @@ function VideoPreview({ props, previewContent, onDuration }: { props: VideoGener
       <label className="generation-version-select"><span>历史版本</span><select value={props.selectedVersionId} onChange={(event) => props.onSelectVersion(event.target.value)} disabled={!props.versions.length}><option value="">当前配置</option>{props.versions.map((version) => <option value={version.id} key={version.id}>{version.label}</option>)}</select></label>
       <div className="generation-stage-progress combined" role="progressbar" aria-label="生成进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={totalPercent}>
         <i><em style={{ width: `${totalPercent}%` }} /></i><output>{totalPercent}%</output>
+        {props.busy && totalPercent < 100 && <div className="generation-progress-status" role="status" aria-live="polite"><InlineLoader variant="chomp" size={24} /><span>{totalPercent < 50 ? "生成音频中" : "生成视频中"}</span></div>}
       </div>
       <button className="generation-header-button" onClick={props.onRegenerate} disabled={props.busy || !props.canGenerate}>{props.busy ? "生成中" : "生成视频"}</button>
     </header>
