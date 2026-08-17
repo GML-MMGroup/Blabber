@@ -1074,7 +1074,13 @@ export default function Home() {
           </div>}
           <section className={`script-result-card ${scriptGenerating ? "generating" : episode.turns.length ? "ready" : "empty"}`}>
             <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : <span>{episode.turns.length ? "✓" : "⌁"}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{!scriptGenerating && episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
-            {scriptGenerating ? <p className="script-result-waiting" role="status" aria-live="polite">正在梳理节目结构和双主持人对白，请稍候…</p> : episode.turns.length > 0 ? <>
+            {scriptGenerating ? <div className="script-result-generating" role="status" aria-live="polite">
+              <p>正在梳理节目结构和双主持人对白，请稍候…</p>
+              <div className="script-result-progress" role="progressbar" aria-label="播客脚本生成进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={scriptProgress}>
+                <span><small>生成进度</small><output>{scriptProgress}%</output></span>
+                <i aria-hidden="true"><em style={{ width: `${scriptProgress}%` }} /></i>
+              </div>
+            </div> : episode.turns.length > 0 ? <>
               <div className="script-result-stats">
                 <span><b>{episode.turns.length}</b><small>对话分段</small></span>
                 <span><b>约 {Math.max(1, Math.floor(episode.turns.reduce((sum, turn) => sum + turn.text.length, 0) / 240))}:{String(Math.floor((episode.turns.reduce((sum, turn) => sum + turn.text.length, 0) % 240) / 4)).padStart(2, "0")}</b><small>预计时长</small></span>
