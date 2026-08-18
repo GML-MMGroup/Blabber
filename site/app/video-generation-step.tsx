@@ -80,13 +80,14 @@ function VideoPreview({ props, previewContent, onDuration }: { props: VideoGener
   const audioRatio = props.audioTotal ? Math.min(1, props.audioCompleted / props.audioTotal) : 0;
   const videoRatio = props.videoTotal ? Math.min(1, props.videoCompleted / props.videoTotal) : 0;
   const totalPercent = Math.round(audioRatio * 50 + videoRatio * 50);
+  const showGenerationStatus = props.busy && totalPercent < 100;
   return <section className="generation-preview-panel">
     <header className="generation-preview-header">
       <div className="generation-preview-title"><b>合成视频预览</b><small>AI 语音播客合成视频，支持预览与导出</small></div>
       <label className="generation-version-select"><span>历史版本</span><select value={props.selectedVersionId} onChange={(event) => props.onSelectVersion(event.target.value)} disabled={!props.versions.length}><option value="">当前配置</option>{props.versions.map((version) => <option value={version.id} key={version.id}>{version.label}</option>)}</select></label>
-      <div className="generation-stage-progress combined" role="progressbar" aria-label="生成进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={totalPercent}>
+      <div className={`generation-stage-progress combined${showGenerationStatus ? " has-status" : ""}`} role="progressbar" aria-label="生成进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={totalPercent}>
+        {showGenerationStatus && <div className="generation-progress-status" role="status" aria-live="polite"><InlineLoader variant="chomp" size={24} /><span>{totalPercent < 50 ? "生成音频中" : "生成视频中"}</span></div>}
         <i><em style={{ width: `${totalPercent}%` }} /></i><output>{totalPercent}%</output>
-        {props.busy && totalPercent < 100 && <div className="generation-progress-status" role="status" aria-live="polite"><InlineLoader variant="chomp" size={24} /><span>{totalPercent < 50 ? "生成音频中" : "生成视频中"}</span></div>}
       </div>
       <button className="generation-header-button" onClick={props.onRegenerate} disabled={props.busy || !props.canGenerate}>{props.busy ? "生成中" : "生成视频"}</button>
     </header>

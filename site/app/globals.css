@@ -771,7 +771,7 @@ body { background:#f7f7fa; }
 @media (width < 0px) {.generation-preview-panel .generation-preview-header{display:flex;align-items:stretch;flex-direction:column}.generation-stage-progress{grid-template-columns:1fr}.generation-header-button{align-self:flex-end}}
 /* One continuous generation progress: audio 0-50%, video 50-100%. */
 .generation-stage-progress.combined{display:grid;grid-template-columns:minmax(160px,1fr) 42px;align-items:center;gap:10px}.generation-stage-progress.combined>i{display:block;height:9px;overflow:hidden;border-radius:99px;background:#eeeaf5;box-shadow:inset 0 1px 2px rgba(55,42,91,.07)}.generation-stage-progress.combined>i>em{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#7860ef 0%,#8a62ed 50%,#8b45e8 100%);transition:width .22s ease}.generation-stage-progress.combined output{color:#6952d5;font-size:12px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
-.generation-progress-status{grid-column:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:24px;margin-top:2px;color:#6b52d5;font-size:12px;font-weight:600;line-height:1}.generation-progress-status>span:first-child{flex:0 0 auto}
+.generation-progress-status{grid-column:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:24px;color:#6b52d5;font-size:12px;font-weight:600;line-height:1}.generation-stage-progress.combined.has-status .generation-progress-status{grid-row:1}.generation-stage-progress.combined.has-status>i{grid-column:1;grid-row:2}.generation-stage-progress.combined.has-status output{grid-column:2;grid-row:2}.generation-progress-status>span:first-child{flex:0 0 auto}
 @media (width < 0px) {.generation-stage-progress.combined{grid-template-columns:minmax(0,1fr) 40px}}
 
 /* Final responsive polish: keep the generation toolbar readable and the export
@@ -826,7 +826,7 @@ body>.app-shell,.app-shell{position:fixed;left:var(--workspace-left);top:var(--w
 .generation-stage-progress.combined>i>em{background:linear-gradient(90deg,#3b82f6 0%,#a855f7 50%,#ec4899 100%);transition:width .5s ease}
 .generation-stage-progress.combined output{color:#6b7280;font-weight:600}
 
-/* Center video metadata vertically and keep the generation action aligned with
-   the progress bar instead of the secondary status row. */
+/* Center video metadata vertically and align the generation action with the
+   history-version select control. */
 .workspace-step-2 .video-info-panel{display:flex;flex-direction:column;justify-content:center;box-sizing:border-box}
-.workspace-step-2 .generation-preview-header .generation-header-button{align-self:start}
+.workspace-step-2 .generation-preview-header .generation-header-button{align-self:end}
