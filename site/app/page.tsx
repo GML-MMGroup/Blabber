@@ -1093,7 +1093,7 @@ export default function Home() {
           </div>}
           <GenerationBeam active={scriptGenerating} borderRadius={14} className="script-result-beam" size="pulse-inner">
           <section className={`script-result-card ${scriptGenerating ? "generating" : episode.turns.length ? "ready" : "empty"}${scriptRevealActive ? " revealing" : ""}`}>
-            <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : scriptRevealActive ? <InlineLoader className="script-result-complete-loader" variant="domino" size={18} speed={1.25} label="播客脚本已生成" /> : <span>{episode.turns.length ? "✓" : "⌁"}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{!scriptGenerating && episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
+            <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : scriptRevealActive ? <InlineLoader className="script-result-complete-loader" variant="domino" size={18} speed={1.25} label="播客脚本已生成" /> : <span className={episode.turns.length ? undefined : "script-result-waiting-icon"}>{episode.turns.length ? "✓" : ""}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{!scriptGenerating && episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
             {scriptGenerating ? <div className="script-result-generating" role="status" aria-live="polite">
               <p>正在梳理节目结构和双主持人对白，请稍候…</p>
               <div className="script-result-progress" role="progressbar" aria-label="播客脚本生成进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={scriptProgress}>
