@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { InlineLoader } from "generative-loaders";
 import "generative-loaders/styles.css";
+import GenerationBeam from "./generation-beam";
 
 type DirectoryHandleLike = {
   name: string;
@@ -73,7 +74,7 @@ async function saveBlob(blob: Blob, filename: string, directory?: DirectoryHandl
 }
 
 function ConfigUpdateNotice({ updatedAt, busy, progress, canGenerate, onUseLatestConfig, onUseLatestVideo, onRegenerate }: Pick<VideoGenerationStepProps, "updatedAt" | "busy" | "progress" | "canGenerate" | "onUseLatestConfig" | "onUseLatestVideo" | "onRegenerate">) {
-  return <section className="config-update-notice"><span className="notice-icon" aria-hidden="true" /><div><b>配置已更新，当前视频不是最新版本</b><small>编辑后需重新同步　{updatedAt ? new Date(updatedAt).toLocaleString("zh-CN") : "尚未生成视频"}</small></div><nav aria-label="视频版本操作"><button className="outline" onClick={onUseLatestConfig}><i className="switch-icon" aria-hidden="true" />切换至最新配置</button><button className="outline" onClick={onUseLatestVideo}><i className="layers-icon" aria-hidden="true" />切换至最新合成视频</button><button className="primary" onClick={onRegenerate} disabled={busy || !canGenerate}><i className="refresh-icon" aria-hidden="true" />{busy ? `生成中 ${progress}%` : "生成视频"}</button></nav></section>;
+  return <section className="config-update-notice"><span className="notice-icon" aria-hidden="true" /><div><b>配置已更新，当前视频不是最新版本</b><small>编辑后需重新同步　{updatedAt ? new Date(updatedAt).toLocaleString("zh-CN") : "尚未生成视频"}</small></div><nav aria-label="视频版本操作"><button className="outline" onClick={onUseLatestConfig}><i className="switch-icon" aria-hidden="true" />切换至最新配置</button><button className="outline" onClick={onUseLatestVideo}><i className="layers-icon" aria-hidden="true" />切换至最新合成视频</button><GenerationBeam active={busy} borderRadius={8} className="config-generate-beam" size="sm"><button className="primary" onClick={onRegenerate} disabled={busy || !canGenerate}><i className="refresh-icon" aria-hidden="true" />{busy ? `生成中 ${progress}%` : "生成视频"}</button></GenerationBeam></nav></section>;
 }
 
 function VideoPreview({ props, previewContent, onDuration }: { props: VideoGenerationStepProps; previewContent: ReactNode; onDuration: (duration: number) => void }) {
@@ -89,7 +90,7 @@ function VideoPreview({ props, previewContent, onDuration }: { props: VideoGener
         {showGenerationStatus && <div className="generation-progress-status" role="status" aria-live="polite"><InlineLoader variant="spark" size={24} /><span>{totalPercent < 50 ? "生成音频中" : "生成视频中"}</span></div>}
         <i><em style={{ width: `${totalPercent}%` }} /></i><output>{totalPercent}%</output>
       </div>
-      <button className="generation-header-button" onClick={props.onRegenerate} disabled={props.busy || !props.canGenerate}>{props.busy ? "生成中" : "生成视频"}</button>
+      <GenerationBeam active={props.busy} borderRadius={9} className="generation-header-beam" size="sm"><button className="generation-header-button" onClick={props.onRegenerate} disabled={props.busy || !props.canGenerate}>{props.busy ? "生成中" : "生成视频"}</button></GenerationBeam>
     </header>
     {props.videoUrl ? <video key={props.videoUrl} controls preload="metadata" onLoadedMetadata={(event) => onDuration(event.currentTarget.duration)}><source src={props.videoUrl} />浏览器不支持视频播放。</video> : <div className="preview-canvas generation-config-preview">{previewContent}</div>}
   </section>;

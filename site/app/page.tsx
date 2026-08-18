@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { InlineLoader } from "generative-loaders";
 import "generative-loaders/styles.css";
+import GenerationBeam from "./generation-beam";
 import VideoGenerationStep from "./video-generation-step";
 
 type Speaker = "HostA" | "HostB";
@@ -1072,6 +1073,7 @@ export default function Home() {
               <p>{scriptGenerating ? "好的，正在根据你的主题梳理节目结构和双主持人对白。" : "好的！以下是为你生成的播客脚本大纲，已包含开场、对谈和总结结构。"}</p>
             </article>
           </div>}
+          <GenerationBeam active={scriptGenerating} borderRadius={14} className="script-result-beam" size="pulse-inner">
           <section className={`script-result-card ${scriptGenerating ? "generating" : episode.turns.length ? "ready" : "empty"}`}>
             <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : <span>{episode.turns.length ? "✓" : "⌁"}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{!scriptGenerating && episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
             {scriptGenerating ? <div className="script-result-generating" role="status" aria-live="polite">
@@ -1090,6 +1092,7 @@ export default function Home() {
               <div className="script-result-actions"><button onClick={() => setScriptPageOpen(true)}>▣ 查看脚本</button><button onClick={() => setScriptPageOpen(true)}>✎ 编辑</button><button className={savedProjectName ? "saved" : ""} onClick={() => { setSaveAsName(`${episode.topic || prompt || "未命名播客"} - 副本`); setSaveAsOpen(true); }}>{savedProjectName ? "✓ 已保存到项目" : "♧ 保存到项目"}</button></div>
             </> : <p className="script-result-waiting">输入节目主题并发送，生成结果将在这里以结构化卡片返回。</p>}
           </section>
+          </GenerationBeam>
         </aside>
 
         <section className="preview-column">
@@ -1144,6 +1147,7 @@ export default function Home() {
             <article className={videoReady ? "done" : videoActive ? "active" : !audioReady ? "locked" : ""}>
               <span className="production-index">3</span>
               <div className="production-copy"><b>生成视频</b><small>{subtitleDirty ? "字幕字体或字号已修改，将重新合成" : scriptDirty ? "脚本已修改，将同步更新字幕" : videoReady ? "成片已就绪" : videoWaiting ? "正在等待渲染资源" : videoActive ? `正在合成 · ${videoProgress}%` : audioReady ? "将语音、角色动作、字幕与场景合成" : "请先完成语音合成"}</small><progress value={videoProgress} max={100} /></div>
+              <GenerationBeam active={videoWaiting || videoActive} borderRadius={7} className="video-generate-beam" size="sm">
               <button
                 className={`video-generate-button ${videoWaiting || videoActive ? "is-rendering" : videoReady ? "is-complete" : ""}`}
                 onClick={generateVideo}
@@ -1154,6 +1158,7 @@ export default function Home() {
                 <span className="video-button-label">{videoButtonLabel}</span>
                 <span className="video-button-sheen" aria-hidden="true" />
               </button>
+              </GenerationBeam>
             </article>
           </div>
 
