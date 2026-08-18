@@ -224,6 +224,8 @@ export default function Home() {
   const [workspaceStep, setWorkspaceStep] = useState<1 | 2>(1);
   const [episode, setEpisode] = useState<Episode>({ topic: "", turns: [] });
   const [scriptSubmitting, setScriptSubmitting] = useState(false);
+  const [scriptRevealActive, setScriptRevealActive] = useState(false);
+  const scriptWasGenerating = useRef(false);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const sourceFileInput = useRef<HTMLInputElement>(null);
   const [job, setJob] = useState<Job | null>(null);
@@ -362,6 +364,22 @@ export default function Home() {
   const generationAudioCompleted = audioReady ? generationAudioTotal : audioActive ? Math.min(job?.completed ?? 0, generationAudioTotal || job?.total || 0) : 0;
   const generationVideoTotal = videoReady ? (episode.turns.length || 1) : videoActive ? (job?.total ?? episode.turns.length) : episode.turns.length;
   const generationVideoCompleted = videoReady ? generationVideoTotal : videoActive ? Math.min(job?.completed ?? 0, generationVideoTotal || 0) : 0;
+
+  useEffect(() => {
+    if (scriptGenerating) {
+      scriptWasGenerating.current = true;
+      setScriptRevealActive(false);
+      return;
+    }
+
+    const shouldReveal = scriptWasGenerating.current && scriptReady;
+    scriptWasGenerating.current = false;
+    if (!shouldReveal) return;
+
+    setScriptRevealActive(true);
+    const revealTimer = window.setTimeout(() => setScriptRevealActive(false), 1050);
+    return () => window.clearTimeout(revealTimer);
+  }, [scriptGenerating, scriptReady]);
 
   const previousConfigPreviewSignature = useRef(configPreviewSignature);
   useEffect(() => {
@@ -1074,8 +1092,8 @@ export default function Home() {
             </article>
           </div>}
           <GenerationBeam active={scriptGenerating} borderRadius={14} className="script-result-beam" size="pulse-inner">
-          <section className={`script-result-card ${scriptGenerating ? "generating" : episode.turns.length ? "ready" : "empty"}`}>
-            <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : <span>{episode.turns.length ? "✓" : "⌁"}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{!scriptGenerating && episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
+          <section className={`script-result-card ${scriptGenerating ? "generating" : episode.turns.length ? "ready" : "empty"}${scriptRevealActive ? " revealing" : ""}`}>
+            <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : scriptRevealActive ? <InlineLoader className="script-result-complete-loader" variant="domino" size={18} speed={1.25} label="播客脚本已生成" /> : <span>{episode.turns.length ? "✓" : "⌁"}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{!scriptGenerating && episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
             {scriptGenerating ? <div className="script-result-generating" role="status" aria-live="polite">
               <p>正在梳理节目结构和双主持人对白，请稍候…</p>
               <div className="script-result-progress" role="progressbar" aria-label="播客脚本生成进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={scriptProgress}>
