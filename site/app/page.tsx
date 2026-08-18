@@ -298,6 +298,8 @@ export default function Home() {
   const videoActive = Boolean(job && videoStage && !["complete", "failed"].includes(job.status));
   const videoWaiting = ["video_queued", "video_waiting", "video_prepare"].includes(job?.stage ?? "");
   const scriptProgress = scriptReady ? 100 : scriptGenerating && job?.total ? Math.min(99, Math.round((job.completed / job.total) * 100)) : 0;
+  const scriptProgressTurns = scriptActive ? episode.turns.slice(-3) : [];
+  const scriptProgressStartIndex = Math.max(0, episode.turns.length - scriptProgressTurns.length);
   const audioProgress = audioReady ? 100 : audioActive && job?.total ? Math.round((job.completed / job.total) * 100) : 0;
   const videoProgress = videoReady
     ? 100
@@ -1073,12 +1075,17 @@ export default function Home() {
             </article>
           </div>}
           <section className={`script-result-card ${scriptGenerating ? "generating" : episode.turns.length ? "ready" : "empty"}`}>
-            <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : <span>{episode.turns.length ? "✓" : "⌁"}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{!scriptGenerating && episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
+            <header>{scriptGenerating ? <InlineLoader className="script-result-inline-loader" variant="matrix" size={24} /> : <span>{episode.turns.length ? "✓" : "⌁"}</span>}<b>{scriptGenerating ? "正在生成播客脚本" : episode.turns.length ? "播客脚本已生成" : "等待生成播客脚本"}</b>{scriptGenerating ? <em className="script-generation-percent">{scriptProgress}%</em> : episode.turns.length > 0 && <em>脚本 v1.0</em>}</header>
             {scriptGenerating ? <div className="script-result-generating" role="status" aria-live="polite">
-              <p>正在梳理节目结构和双主持人对白，请稍候…</p>
-              <div className="script-result-progress" role="progressbar" aria-label="播客脚本生成进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={scriptProgress}>
-                <span><small>生成进度</small><output>{scriptProgress}%</output></span>
-                <i aria-hidden="true"><em style={{ width: `${scriptProgress}%` }} /></i>
+              <p>{scriptProgressTurns.length ? `已生成 ${episode.turns.length} 段对白，正在继续整理后续内容…` : "正在创建第一批双主持人脚本卡片，请稍候…"}</p>
+              <div className="script-generation-cards" aria-label={`播客脚本生成进度 ${scriptProgress}%`}>
+                {scriptProgressTurns.length ? scriptProgressTurns.map((turn, index) => <article className={turn.speaker === "HostB" ? "host-b" : "host-a"} key={`${scriptProgressStartIndex + index}-${turn.speaker}`}>
+                  <header><b>Host {turn.speaker === "HostB" ? "B" : "A"}</b><span>第 {scriptProgressStartIndex + index + 1} 段 · 已生成</span></header>
+                  <p>{turn.text}</p>
+                </article>) : [0, 1, 2].map((index) => <article className={`placeholder${index === 0 ? " active" : ""}`} key={index} aria-label={`脚本卡片 ${index + 1}${index === 0 ? "生成中" : "等待生成"}`}>
+                  <header><b>脚本卡片 {index + 1}</b><span>{index === 0 ? "生成中" : "等待生成"}</span></header>
+                  <p aria-hidden="true"><i /><i /></p>
+                </article>)}
               </div>
             </div> : episode.turns.length > 0 ? <>
               <div className="script-result-stats">
@@ -1135,7 +1142,7 @@ export default function Home() {
           <div className="production-steps" aria-label="节目生成进度">
             <article className={`status-only ${scriptReady ? "done" : scriptGenerating ? "active" : ""}`}>
               <span className="production-index">1</span>
-              <div className="production-copy"><b>生成并确认脚本</b><small>{scriptReady ? `脚本已就绪 · ${episode.turns.length} 轮对白，可在左侧修改` : scriptGenerating ? `PodcastTTS 正在生成对白 · ${scriptProgress}%` : "等待从左栏生成脚本"}</small><progress value={scriptProgress} max={100} /></div>
+              <div className="production-copy"><b>生成并确认脚本</b><small>{scriptReady ? `脚本已就绪 · ${episode.turns.length} 轮对白，可在左侧修改` : scriptGenerating ? `PodcastTTS 正在生成对白 · ${scriptProgress}%` : "等待从左栏生成脚本"}</small></div>
             </article>
             <article className={`status-only ${audioReady ? "done" : audioActive ? "active" : !scriptReady ? "locked" : ""}`}>
               <span className="production-index">2</span>
