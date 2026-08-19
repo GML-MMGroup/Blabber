@@ -32,6 +32,7 @@ from blabber.video_compose import compose_episode_video
 from blabber.video_engine import CHECKPOINT_PATH, VENDOR_DIR
 from blabber.fast_video import compose_fast_episode_video, render_character_track
 from blabber.image_voice_analyzer import analyze_character_voice
+from blabber.media_tools import ffmpeg_binary
 from blabber.podcast_tts import VolcenginePodcastTTS
 from blabber.schema import Episode, Turn
 from blabber.seedream_compositor import generate_composite_scene
@@ -288,7 +289,7 @@ ACTION_CHARACTER_SPEAKER_IDS = {
 }
 AVAILABLE_SPEAKER_IDS = frozenset(ACTION_CHARACTER_SPEAKER_IDS.values())
 VOICE_PREVIEW_TEXT = "你好，欢迎来到 Blabber。让我们一起开始今天的播客吧。"
-VOICE_PREVIEW_LOCK = threading.Lock()
+VOICE_PREVIEW_LOCKS: dict[str, threading.Lock] = {}
 ACTION_CHARACTERS = frozenset(ACTION_CHARACTER_SPEAKER_IDS)
 ACTION_CHARACTER_VOICE_PROMPTS = {
     "dog": (
@@ -536,25 +537,32 @@ def _normalize_creative_config(raw_config) -> dict:
 
 
 def _generate_voice_preview(voice_id: str) -> Path:
+    preview_voice_aliases = {
+        "zh_female_mizaitongxue_v2_saturn_bigtts": "zh_female_mizai_saturn_bigtts",
+        "zh_male_dayixiansheng_v2_saturn_bigtts": "zh_male_dayi_saturn_bigtts",
+    }
     if voice_id not in AVAILABLE_SPEAKER_IDS:
         raise ValueError("不支持的音色 ID")
     app_id = os.getenv("VOLCENGINE_SPEECH_APP_ID", "").strip()
     access_key = os.getenv("VOLCENGINE_SPEECH_ACCESS_KEY", "").strip()
     if not app_id or not access_key:
         raise RuntimeError("请先配置 PodcastTTS App ID 和 Access Token")
+    preview_voice_id = preview_voice_aliases.get(voice_id, voice_id)
     cache_dir = OUTPUT_ROOT / "voice-previews"
+    resource_id = "seed-tts-2.0" if ("_uranus_" in preview_voice_id or "_saturn_" in preview_voice_id) else "seed-tts-1.0"
     cache_key = hashlib.sha256(
-        f"seed-tts-2.0\0{voice_id}\0{VOICE_PREVIEW_TEXT}".encode("utf-8")
+        f"{resource_id}\0{preview_voice_id}\0{VOICE_PREVIEW_TEXT}".encode("utf-8")
     ).hexdigest()[:20]
     output = cache_dir / f"{cache_key}.mp3"
-    with VOICE_PREVIEW_LOCK:
+    preview_lock = VOICE_PREVIEW_LOCKS.setdefault(voice_id, threading.Lock())
+    with preview_lock:
         if output.is_file() and output.stat().st_size > 0:
             return output
         payload = json.dumps({
             "user": {"uid": "blabber_voice_preview"},
             "req_params": {
                 "text": VOICE_PREVIEW_TEXT,
-                "speaker": voice_id,
+                "speaker": preview_voice_id,
                 "audio_params": {"format": "mp3", "sample_rate": 24000},
             },
         }, ensure_ascii=False).encode("utf-8")
@@ -565,7 +573,7 @@ def _generate_voice_preview(voice_id: str) -> Path:
                 "Content-Type": "application/json",
                 "X-Api-App-Id": app_id,
                 "X-Api-Access-Key": access_key,
-                "X-Api-Resource-Id": "seed-tts-2.0",
+                "X-Api-Resource-Id": resource_id,
                 "X-Api-Request-Id": str(uuid.uuid4()),
             },
             method="POST",
@@ -1428,6 +1436,36 @@ def _generate_script(job_id: str, prompt: str, target_minutes: float) -> None:
         _update_job(job_id, status="failed", stage="script_failed", error=str(error))
 
 
+def _create_video_cover(run_dir: Path, final_path: Path) -> Path | None:
+    scenes = sorted((run_dir / "video_tmp").glob("*-segments/scene.mp4"), key=lambda item: item.stat().st_mtime, reverse=True)
+    source = scenes[0] if scenes else final_path
+    output = run_dir / "cover.png"
+    completed = subprocess.run(
+        [ffmpeg_binary(), "-y", "-v", "error", "-ss", "1.0", "-i", str(source), "-frames:v", "1", "-update", "1", str(output)],
+        capture_output=True, text=True, timeout=60,
+    )
+    if completed.returncode or not output.is_file() or output.stat().st_size <= 0:
+        print(f"[视频封面] 生成失败：{completed.stderr[-1000:]}", flush=True)
+        output.unlink(missing_ok=True)
+        return None
+    return output
+
+
+def _export_video(source: Path, run_dir: Path, width: int, height: int) -> Path:
+    output_dir = run_dir / "exports"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output = output_dir / f"video-{width}x{height}.mp4"
+    temporary = output.with_suffix(".rendering.mp4")
+    completed = subprocess.run(
+        [ffmpeg_binary(), "-y", "-v", "error", "-i", str(source), "-vf", f"scale={width}:{height}:flags=lanczos", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(temporary)],
+        capture_output=True, text=True, timeout=3600,
+    )
+    if completed.returncode or not temporary.is_file() or temporary.stat().st_size <= 0:
+        temporary.unlink(missing_ok=True)
+        raise RuntimeError(f"视频导出失败：{completed.stderr[-2000:] or 'FFmpeg 未生成文件'}")
+    temporary.replace(output)
+    return output
+
 def _generate_video(
     job_id: str,
     run_dir: Path,
@@ -1465,6 +1503,7 @@ def _generate_video(
                 )
             else:
                 final_path = asyncio.run(compose_episode_video(run_dir))
+        cover_path = _create_video_cover(run_dir, final_path)
         _update_job(
             job_id,
             status="complete",
@@ -1472,6 +1511,8 @@ def _generate_video(
             completed=1,
             total=1,
             video_url=_media_url(final_path),
+            video_file_size=final_path.stat().st_size,
+            cover_url=_media_url(cover_path) if cover_path else None,
             edited_video_url=None,
             video_edit=None,
         )
@@ -1811,6 +1852,62 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        video_cover_match = re.fullmatch(r"/api/mvp/jobs/([^/]+)/cover", path)
+        if video_cover_match:
+            job_id = video_cover_match.group(1)
+            with JOBS_LOCK:
+                job = JOBS.get(job_id)
+                run_dir = Path(job["run_dir"]) if job and job.get("run_dir") else None
+            if job is None:
+                self._json(404, {"error": "任务不存在"})
+                return
+            if run_dir is None:
+                self._json(409, {"error": "任务没有可用的视频工程"})
+                return
+            source = _existing_video_path(job, run_dir)
+            if source is None:
+                self._json(409, {"error": "请先生成视频"})
+                return
+            cover = _create_video_cover(run_dir, source)
+            if cover is None:
+                self._json(502, {"error": "无字幕封面生成失败"})
+                return
+            _update_job(job_id, cover_url=_media_url(cover))
+            self._json(200, {"cover_url": _media_url(cover), "file_size": cover.stat().st_size})
+            return
+        video_export_match = re.fullmatch(r"/api/mvp/jobs/([^/]+)/export", path)
+        if video_export_match:
+            job_id = video_export_match.group(1)
+            with JOBS_LOCK:
+                job = JOBS.get(job_id)
+                run_dir = Path(job["run_dir"]) if job and job.get("run_dir") else None
+            if job is None:
+                self._json(404, {"error": "任务不存在"})
+                return
+            if run_dir is None:
+                self._json(409, {"error": "任务没有可用的视频工程"})
+                return
+            source = _existing_video_path(job, run_dir)
+            if source is None:
+                self._json(409, {"error": "请先生成视频"})
+                return
+            resolutions = {"1920x1080": (1920, 1080), "1280x720": (1280, 720), "854x480": (854, 480)}
+            resolution = str(body.get("resolution", "1920x1080"))
+            if resolution not in resolutions:
+                self._json(400, {"error": "不支持的导出分辨率"})
+                return
+            try:
+                width, height = resolutions[resolution]
+                if width == 1920 and height == 1080:
+                    output = source
+                else:
+                    with VIDEO_EDIT_LOCK:
+                        output = _export_video(source, run_dir, width, height)
+            except (RuntimeError, subprocess.TimeoutExpired) as error:
+                self._json(502, {"error": str(error)})
+                return
+            self._json(200, {"video_url": _media_url(output), "file_size": output.stat().st_size, "resolution": resolution})
+            return
         video_edit_match = re.fullmatch(
             r"/api/mvp/jobs/([^/]+)/video/(trim|edit)", path
         )

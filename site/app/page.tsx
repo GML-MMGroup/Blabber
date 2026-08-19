@@ -134,6 +134,11 @@ const defaultPlacements: Placement[] = [
   { x: 15, y: 0, scale: 1.07 },
   { x: 45, y: 0, scale: 1 },
 ];
+const VIDEO_WIDTH = 1920;
+const VIDEO_HEIGHT = 1080;
+const CHARACTER_BASE_SIZE = 700;
+const CHARACTER_BASE_TOP = 245;
+const CHARACTER_HEIGHT_STEP = 8;
 
 const voices: Voice[] = [
   { id: "zh_female_qiaopinv_uranus_bigtts", actionId: "duck", name: "俏皮女声 2.0", note: "豆包 TTS 2.0 · 俏皮灵动", prompt: "青年感拟人卡通角色，普通话标准，声音清脆明亮、机灵俏皮；语气自信活泼，带自然笑意，吐字清楚，节奏轻快。", color: "#ff9254" },
@@ -200,6 +205,32 @@ function sameStringList(left: string[] | undefined, right: string[]): boolean {
   return Boolean(left && left.length === right.length && left.every((item, index) => item === right[index]));
 }
 
+function samePlacementList(left: Placement[] | undefined, right: Placement[]): boolean {
+  return Boolean(left && left.length === right.length && left.every((item, index) => (
+    item.x === right[index].x
+    && item.y === right[index].y
+    && item.scale === right[index].scale
+  )));
+}
+
+function placementPreviewStyle(placement: Placement): CSSProperties {
+  const left = Math.round(VIDEO_WIDTH * placement.x / 100);
+  const top = Math.round(CHARACTER_BASE_TOP - placement.y * CHARACTER_HEIGHT_STEP);
+  const size = Math.round(CHARACTER_BASE_SIZE * placement.scale);
+  return {
+    left: `${left / VIDEO_WIDTH * 100}%`,
+    top: `${top / VIDEO_HEIGHT * 100}%`,
+    width: `${size / VIDEO_WIDTH * 100}%`,
+  };
+}
+
+function stripSubtitlePunctuation(text: string): string {
+  return text
+    .replace(/\p{P}/gu, (character) => character === "." ? character : "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export default function Home() {
   useEffect(() => {
     const designWidth = 2048;
@@ -226,6 +257,8 @@ export default function Home() {
   const [scriptSubmitting, setScriptSubmitting] = useState(false);
   const [scriptRevealActive, setScriptRevealActive] = useState(false);
   const scriptWasGenerating = useRef(false);
+  const [videoRevealActive, setVideoRevealActive] = useState(false);
+  const videoWasGenerating = useRef(false);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const sourceFileInput = useRef<HTMLInputElement>(null);
   const [job, setJob] = useState<Job | null>(null);
@@ -286,16 +319,21 @@ export default function Home() {
   );
   const selectedSubtitleFont = subtitleFonts.find((item) => item.id === subtitleFontId) ?? subtitleFonts[0];
   const subtitleFontReady = Boolean(selectedSubtitleFont?.installed);
-  const videoChangesPending = scriptDirty || subtitleDirty;
+  const placementDirty = Boolean(job?.video_url) && !samePlacementList(
+    job?.creative_config?.placements,
+    placements,
+  );
+  const videoChangesPending = scriptDirty || subtitleDirty || placementDirty;
   const rawSubtitlePreviewText = episode.turns.find((turn) => turn.text.trim())?.text.trim() || prompt.trim() || "欢迎来到 Blabber 动画播客";
-  const subtitlePreviewText = rawSubtitlePreviewText.length > 22 ? `${rawSubtitlePreviewText.slice(0, 22)}…` : rawSubtitlePreviewText;
+  const cleanedSubtitlePreviewText = stripSubtitlePunctuation(rawSubtitlePreviewText) || "欢迎来到 Blabber 动画播客";
+  const subtitlePreviewText = cleanedSubtitlePreviewText.slice(0, 22);
   const busy = scriptSubmitting || Boolean(job && !["complete", "failed"].includes(job.status));
   const audioReady = Boolean(job?.audio_url) && !audioConfigDirty;
   const scriptAvailable = episode.turns.length > 0;
   const scriptActive = Boolean(job && job.stage.startsWith("script_") && !["complete", "failed"].includes(job.status));
   const scriptGenerating = scriptSubmitting || scriptActive;
   const scriptReady = scriptAvailable && !scriptGenerating;
-  const videoReady = Boolean(job?.video_url) && !scriptDirty && !subtitleDirty;
+  const videoReady = Boolean(job?.video_url) && !videoChangesPending;
   const videoStage = Boolean(job?.stage?.startsWith("video"));
   const audioActive = Boolean(job && !audioReady && !scriptActive && !videoStage && !["complete", "failed"].includes(job.status));
   const videoActive = Boolean(job && videoStage && !["complete", "failed"].includes(job.status));
@@ -309,7 +347,9 @@ export default function Home() {
       : 0;
   const videoButtonLabel = !subtitleFontReady
     ? "请先下载字体"
-    : videoChangesPending
+    : placementDirty
+      ? "按预览位置生成"
+      : videoChangesPending
       ? "更新字幕并生成"
       : videoReady
         ? "视频已生成"
@@ -381,6 +421,22 @@ export default function Home() {
     return () => window.clearTimeout(revealTimer);
   }, [scriptGenerating, scriptReady]);
 
+  useEffect(() => {
+    if (videoActive) {
+      videoWasGenerating.current = true;
+      setVideoRevealActive(false);
+      return;
+    }
+
+    const shouldReveal = videoWasGenerating.current && videoReady;
+    videoWasGenerating.current = false;
+    if (!shouldReveal) return;
+
+    setVideoRevealActive(true);
+    const revealTimer = window.setTimeout(() => setVideoRevealActive(false), 1100);
+    return () => window.clearTimeout(revealTimer);
+  }, [videoActive, videoReady]);
+
   const previousConfigPreviewSignature = useRef(configPreviewSignature);
   useEffect(() => {
     if (previousConfigPreviewSignature.current === configPreviewSignature) return;
@@ -389,8 +445,8 @@ export default function Home() {
   }, [configPreviewSignature]);
 
   useEffect(() => {
-    if (job?.id && job.video_url) setSelectedGenerationVersionId(job.id);
-  }, [job?.id, job?.video_url]);
+    if (job?.id && job.video_url && !videoChangesPending) setSelectedGenerationVersionId(job.id);
+  }, [job?.id, job?.video_url, videoChangesPending]);
 
   useEffect(() => {
     void loadHistory();
@@ -813,7 +869,7 @@ export default function Home() {
         body: JSON.stringify({
           mode: "action",
           episode,
-          force: scriptDirty || subtitleDirty,
+          force: videoChangesPending,
           creative_config: {
             background: background.id,
             characters: selected.map((item) => item.actionId),
@@ -1121,17 +1177,12 @@ export default function Home() {
                   <img className="scene-background" src={background.image} alt={background.name} />
                   {selected.slice(0, 2).map((character, index) => {
                     const placement = placements[index] ?? defaultPlacements[index];
-                    const actionSize = 700 * placement.scale;
                     return <img
                       key={character.id}
                       className={`canvas-character character-${index}`}
                       src={character.actionPreview}
                       alt={`${character.name}，${index === 0 ? "左侧" : "右侧"}`}
-                      style={{
-                        left: `${placement.x}%`,
-                        top: `${((245 - placement.y * 8) / 1080) * 100}%`,
-                        width: `${(actionSize / 1920) * 100}%`,
-                      } as CSSProperties}
+                      style={placementPreviewStyle(placement)}
                     />;
                   })}
                   {background.foreground && <img className="scene-foreground" src={background.foreground} alt="场景前景" />}
@@ -1164,15 +1215,17 @@ export default function Home() {
             </article>
             <article className={videoReady ? "done" : videoActive ? "active" : !audioReady ? "locked" : ""}>
               <span className="production-index">3</span>
-              <div className="production-copy"><b>生成视频</b><small>{subtitleDirty ? "字幕字体或字号已修改，将重新合成" : scriptDirty ? "脚本已修改，将同步更新字幕" : videoReady ? "成片已就绪" : videoWaiting ? "正在等待渲染资源" : videoActive ? `正在合成 · ${videoProgress}%` : audioReady ? "将语音、角色动作、字幕与场景合成" : "请先完成语音合成"}</small><progress value={videoProgress} max={100} /></div>
+              <div className="production-copy"><b>生成视频</b><small>{placementDirty ? "角色位置或大小已修改，将按当前预览重新合成" : subtitleDirty ? "字幕字体或字号已修改，将重新合成" : scriptDirty ? "脚本已修改，将同步更新字幕" : videoReady ? "成片已就绪" : videoWaiting ? "正在等待渲染资源" : videoActive ? `正在合成 · ${videoProgress}%` : audioReady ? "将语音、角色动作、字幕与场景合成" : "请先完成语音合成"}</small><progress value={videoProgress} max={100} /></div>
               <GenerationBeam active={videoWaiting || videoActive} borderRadius={7} className="video-generate-beam" size="sm">
               <button
-                className={`video-generate-button ${videoWaiting || videoActive ? "is-rendering" : videoReady ? "is-complete" : ""}`}
+                className={`video-generate-button ${videoWaiting || videoActive ? "is-rendering" : videoReady ? `is-complete${videoRevealActive ? " is-revealing" : ""}` : ""}`}
                 onClick={generateVideo}
                 disabled={busy || videoReady || !audioReady || selected.length < 2 || !subtitleFontReady}
                 aria-live="polite"
               >
-                <span className="video-button-orbit" aria-hidden="true"><i /></span>
+                {videoRevealActive
+                  ? <InlineLoader className="video-complete-loader" variant="aperture" size={16} color="#ffffff" speed={1.15} label="视频已生成" />
+                  : <span className="video-button-orbit" aria-hidden="true"><i /></span>}
                 <span className="video-button-label">{videoButtonLabel}</span>
                 <span className="video-button-sheen" aria-hidden="true" />
               </button>
@@ -1277,7 +1330,7 @@ export default function Home() {
               })}</div>
             </div>
               <div className="subtitle-controls embedded-subtitle-controls" aria-label="字幕预览设置">
-                <div className="section-title"><span><b>字</b>字幕预览</span><small>画面实时更新</small></div>
+                <div className="section-title"><span><b><img src="/closed.png" alt="" aria-hidden="true" /></b>字幕预览</span><small>画面实时更新</small></div>
               <label className="subtitle-font-control">
                 <span>字体</span>
                 <select value={subtitleFontId} onChange={(event) => updateSubtitleFont(event.target.value)} aria-label="字幕字体">
@@ -1310,8 +1363,7 @@ export default function Home() {
             <img className="scene-background" src={background.image} alt={background.name} />
             {selected.slice(0, 2).map((character, index) => {
               const placement = placements[index] ?? defaultPlacements[index];
-              const actionSize = 700 * placement.scale;
-              return <img key={character.id} className={`canvas-character character-${index}`} src={character.actionPreview} alt={`${character.name}，${index === 0 ? "左侧" : "右侧"}`} style={{ left: `${placement.x}%`, top: `${((245 - placement.y * 8) / 1080) * 100}%`, width: `${(actionSize / 1920) * 100}%` } as CSSProperties} />;
+              return <img key={character.id} className={`canvas-character character-${index}`} src={character.actionPreview} alt={`${character.name}，${index === 0 ? "左侧" : "右侧"}`} style={placementPreviewStyle(placement)} />;
             })}
             {background.foreground && <img className="scene-foreground" src={background.foreground} alt="场景前景" />}
             <div className="on-air-pill"><i /> ON AIR</div>
@@ -1329,7 +1381,7 @@ export default function Home() {
           selectedVersionId={selectedGenerationVersionId}
           onSelectVersion={setSelectedGenerationVersionId}
           errorMessage={selectedGenerationVersion ? "" : error || job?.error || ""}
-          configChanged={scriptDirty || subtitleDirty}
+          configChanged={videoChangesPending}
           canGenerate={scriptReady && selected.length >= 2 && subtitleFontReady}
           onUseLatestConfig={() => {
             setSelectedGenerationVersionId("");
@@ -1339,7 +1391,10 @@ export default function Home() {
             const latestVideo = generationVersionJobs[0];
             if (latestVideo) setSelectedGenerationVersionId(latestVideo.id);
           }}
-          onRegenerate={() => void generatePodcastVideo()}
+          onRegenerate={() => {
+            if (job?.id && audioReady && !scriptDirty) void generateVideo();
+            else void generatePodcastVideo();
+          }}
         />
       </section>
       {characterPickerHost !== null && <div className="more-scenes-backdrop character-picker-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setCharacterPickerHost(null)}>
@@ -1398,7 +1453,7 @@ export default function Home() {
           <div className="config-scroll">
             {configBusy && !config && <div className="config-loading">正在读取本地配置…</div>}
             {config && Array.from(new Set(config.fields.map((field) => field.group))).map((group) => <fieldset key={group}>
-              <legend>{group} · <a href="https://console.volcengine.com/speech/app" target="_blank" rel="noreferrer">豆包语音控制台 ↗</a></legend>
+              <legend>{group} · <a href="https://console.volcengine.com/speech/new/setting/apikeys?projectName=default" target="_blank" rel="noreferrer">豆包语音控制台 ↗</a></legend>
               <div className="config-fields">
                 {config.fields.filter((field) => field.group === group).map((field) => {
                   const markedForClear = clearConfigKeys.includes(field.key);

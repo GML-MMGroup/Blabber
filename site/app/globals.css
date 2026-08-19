@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@font-face { font-family:"DM Sans"; font-style:normal; font-weight:400; font-display:swap; src:url("/fonts/dm-sans-400.woff2") format("woff2"); }
+@font-face { font-family:"DM Sans"; font-style:normal; font-weight:500; font-display:swap; src:url("/fonts/dm-sans-500.woff2") format("woff2"); }
+@font-face { font-family:"DM Sans"; font-style:normal; font-weight:700 900; font-display:swap; src:url("/fonts/dm-sans-700.woff2") format("woff2"); }
+@font-face { font-family:"Host Grotesk"; font-style:normal; font-weight:300 800; font-display:swap; src:url("/fonts/host-grotesk-latin.woff2") format("woff2"); }
+@font-face { font-family:"Fragment Mono"; font-style:normal; font-weight:400; font-display:swap; src:url("/fonts/fragment-mono-latin.woff2") format("woff2"); }
+
 :root {
   --ink: #19202c;
   --muted: #788095;
@@ -9,13 +15,18 @@
   --blue: #547cff;
   --violet: #825dff;
   --pink: #f173b6;
+  --font-body: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-display: "Host Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "Fragment Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", monospace;
 }
 
 * { box-sizing: border-box; }
 html, body { min-height: 100%; }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 button, textarea, input, select { font: inherit; }
 button { color: inherit; }
+h1, h2, h3, .blabber-brand span b { font-family: var(--font-display); }
+code, pre, kbd, samp, .history-panel time, .video-editor > header output, .trim-ruler, .clip-select, .placement-card output, .subtitle-size-control output, .config-fields input, .voice-adjustments output { font-family: var(--font-mono); }
 .app-shell { min-height: 100vh; }
 
 .studio-layout { height: 100vh; min-height: 760px; display: grid; grid-template-columns: 380px minmax(500px,1fr) 350px; background: #f4f5f9; }
@@ -61,6 +72,7 @@ button { color: inherit; }
 .video-generate-button { position: relative; isolation: isolate; min-width: 92px; min-height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; overflow: hidden; background: linear-gradient(120deg,#222938 0%,#35304f 48%,#272d3b 100%)!important; background-size: 220% 220%!important; box-shadow: 0 5px 13px rgba(39,43,60,.2),inset 0 1px 0 rgba(255,255,255,.12); transition: transform .2s ease,box-shadow .2s ease,filter .2s ease; }.video-generate-button:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(69,56,126,.28),inset 0 1px 0 rgba(255,255,255,.18); filter: brightness(1.08); }.video-button-label,.video-button-orbit { position: relative; z-index: 2; }.video-button-orbit { width: 15px; height: 15px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; }.video-button-orbit:before { content: "✦"; color: #dcd2ff; font-size: 7px; line-height: 1; }.video-button-orbit i { display: none; }.video-button-sheen { position: absolute; z-index: 1; top: -100%; bottom: -100%; left: -42%; width: 28%; transform: rotate(18deg); background: linear-gradient(90deg,transparent,rgba(255,255,255,.38),transparent); pointer-events: none; }
 .video-generate-button.is-rendering { opacity: 1!important; cursor: wait!important; background: linear-gradient(120deg,#526dff,#8a5ff0,#e56cb0,#526dff)!important; background-size: 280% 280%!important; box-shadow: 0 0 0 1px rgba(132,105,245,.28),0 8px 22px rgba(107,82,218,.38); animation: video-button-gradient 3s ease infinite,video-button-breathe 1.8s ease-in-out infinite; }.video-generate-button.is-rendering .video-button-orbit { border-color: rgba(255,255,255,.28); border-top-color: white; border-right-color: white; animation: video-button-orbit 1s linear infinite; }.video-generate-button.is-rendering .video-button-orbit:before { content: ""; }.video-generate-button.is-rendering .video-button-orbit i { position: absolute; display: block; width: 4px; height: 4px; top: -2px; left: 5px; border-radius: 50%; background: white; box-shadow: 0 0 7px 2px rgba(255,255,255,.75); }.video-generate-button.is-rendering .video-button-sheen { animation: video-button-sheen 1.7s ease-in-out infinite; }
 .video-generate-button.is-complete { opacity: 1!important; background: linear-gradient(135deg,#2fa06d,#50bf86)!important; box-shadow: 0 5px 14px rgba(47,160,109,.25); }.video-generate-button.is-complete .video-button-orbit { border-color: rgba(255,255,255,.7); }.video-generate-button.is-complete .video-button-orbit:before { content: "✓"; color: white; font-size: 8px; }
+.video-complete-loader{position:relative;z-index:2;flex:0 0 auto}.video-generate-button.is-revealing{animation:video-complete-arrive .72s cubic-bezier(.2,.72,.22,1) both}@keyframes video-complete-arrive{0%{transform:scale(.96);filter:brightness(.92)}55%{transform:scale(1.035);filter:brightness(1.08)}100%{transform:none;filter:none}}
 @keyframes video-button-gradient { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 @keyframes video-button-breathe { 0%,100% { box-shadow: 0 0 0 1px rgba(132,105,245,.24),0 7px 17px rgba(107,82,218,.28); } 50% { box-shadow: 0 0 0 3px rgba(132,105,245,.13),0 10px 27px rgba(213,92,172,.42); } }
 @keyframes video-button-orbit { to { transform: rotate(360deg); } }
@@ -420,7 +432,7 @@ body { background:#f7f7fa; }
 .script-result-card.revealing{animation:script-card-ready .72s cubic-bezier(.2,.72,.22,1) both}.script-result-card.ready>header>.script-result-complete-loader{box-sizing:border-box;padding:5px;background:#35b67a;color:#fff;box-shadow:0 4px 11px rgba(53,182,122,.24)}
 @keyframes script-card-ready{0%{opacity:0;transform:translateY(8px) scale(.985);box-shadow:0 0 0 rgba(46,128,88,0)}55%{opacity:1;transform:translateY(-1px) scale(1.003)}100%{opacity:1;transform:none;box-shadow:0 5px 15px rgba(46,128,88,.04)}}
 .script-result-card > header { display:grid; grid-template-columns:30px minmax(0,1fr) auto; align-items:center; gap:10px; padding:15px 15px 10px; }.script-result-card > header > span { width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:#35b67a; color:#fff; font-size:14px; font-weight:900; }.script-result-card.empty > header > span { background:#aaa5b3; }.script-result-card > header > b { font-size:16px; }.script-result-card > header > em { border-radius:5px; padding:4px 7px; background:#dff7ea; color:#43a777; font-size:10px; font-style:normal; font-weight:900; }
-.script-result-card.empty>header>.script-result-waiting-icon{position:relative;box-sizing:border-box;border:1px solid #d8cff9;border-radius:50%;background:#f0ecff;box-shadow:0 3px 9px rgba(103,78,205,.12)}.script-result-card.empty>header>.script-result-waiting-icon::after{content:"";position:absolute;inset:4px;background:#6650cd;-webkit-mask:url("../../assets/icons/time-left.png") center/contain no-repeat;mask:url("../../assets/icons/time-left.png") center/contain no-repeat}
+.script-result-card.empty>header>.script-result-waiting-icon{position:relative;box-sizing:border-box;border:1.5px solid #b9abf0;border-radius:50%;background:#fff;box-shadow:0 3px 10px rgba(91,63,208,.18)}.script-result-card.empty>header>.script-result-waiting-icon::after{content:"";position:absolute;inset:3px;background:#5b3fd0;-webkit-mask:url("/time-left.png") center/contain no-repeat;mask:url("/time-left.png") center/contain no-repeat}
 .script-result-card.generating > header > .script-result-inline-loader { width:24px; height:24px; padding:2px; border-radius:7px; background:#7560d8; color:#fff; }
 .script-result-generating { padding:8px 15px 18px; }.script-result-generating > p { margin:0 0 12px; color:#837b91; font-size:12px; line-height:1.6; }.script-result-progress > span { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:7px; }.script-result-progress small { color:#70677e; font-size:11px; font-weight:700; }.script-result-progress output { color:#6952d5; font-size:12px; font-weight:900; font-variant-numeric:tabular-nums; }.script-result-progress > i { display:block; height:8px; overflow:hidden; border-radius:99px; background:#e7e1f5; box-shadow:inset 0 1px 2px rgba(62,46,105,.08); }.script-result-progress > i > em { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#6759ef 0%,#9b56e9 55%,#ed6fba 100%); box-shadow:0 0 10px rgba(133,82,225,.3); transition:width .45s ease; }
 .script-result-stats { display:grid; grid-template-columns:repeat(3,1fr); margin:4px 14px 0; padding:13px 0; border-bottom:1px solid #dfece5; }.script-result-stats span { text-align:center; }.script-result-stats span b,.script-result-stats span small { display:block; }.script-result-stats span b { color:#36313b; font-size:16px; }.script-result-stats span small { margin-top:5px; color:#918b98; font-size:11px; }
@@ -451,6 +463,7 @@ body { background:#f7f7fa; }
 /* Embed subtitle settings below host placement controls */
 .embedded-subtitle-controls { margin-top:15px; padding:15px 0 2px; border-top:1px solid #e8e6ed; }
 .embedded-subtitle-controls .section-title { margin-bottom:12px; }
+.embedded-subtitle-controls .section-title b img { display:block; width:12px; height:12px; object-fit:contain; opacity:.78; }
 .asset-scroll .host-selector-section { padding-bottom:18px; }
 @media all { .preview-column { grid-column:3; grid-row:3/5; } }
 /* Let the configuration panel grow naturally and keep both columns aligned. */
@@ -839,3 +852,8 @@ body>.app-shell,.app-shell{position:fixed;left:var(--workspace-left);top:var(--w
 .workspace-step-2 .generation-preview-header .generation-header-button{align-self:end}
 .workspace-step-2 .generation-preview-header .generation-header-beam{align-self:end}
 @media (prefers-reduced-motion:reduce){.video-generate-beam[data-beam],.video-generate-beam[data-beam]::before,.video-generate-beam[data-beam]::after,.video-generate-beam [data-beam-bloom],.generation-header-beam[data-beam],.generation-header-beam[data-beam]::before,.generation-header-beam[data-beam]::after,.generation-header-beam [data-beam-bloom],.config-generate-beam[data-beam],.config-generate-beam[data-beam]::before,.config-generate-beam[data-beam]::after,.config-generate-beam [data-beam-bloom]{animation:none!important}}
+
+/* DeepSeek Harness typography system. Keep this final override after legacy shorthands. */
+body,button,textarea,input,select{font-family:var(--font-body)}
+h1,h2,h3,.column-head h1,.column-head h2,.config-dialog>header h2,.blabber-brand span b{font-family:var(--font-display)}
+code,pre,kbd,samp,.history-panel time,.video-editor>header output,.trim-ruler,.clip-select,.placement-card output,.subtitle-size-control output,.config-fields input,.voice-adjustments output{font-family:var(--font-mono)}

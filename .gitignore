@@ -29,6 +29,10 @@ __pycache__/
 *.log
 *.tmp
 *.temp
+*.tsbuildinfo
+
+# Local media toolchain binaries are installed per machine.
+/tools/
 
 # Downloaded subtitle fonts are runtime cache, not repository assets.
 /mvp/fonts/

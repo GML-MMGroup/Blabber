@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 import subprocess
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +25,15 @@ class Cue:
     end: float
     speaker: str
     text: str
+
+
+def _strip_subtitle_punctuation(text: str) -> str:
+    without_punctuation = "".join(
+        character
+        for character in text
+        if character == "." or not unicodedata.category(character).startswith("P")
+    )
+    return re.sub(r"\s+", " ", without_punctuation).strip()
 
 
 def _visible_length(text: str) -> int:
@@ -102,7 +112,14 @@ def build_cues(
                 if index == len(chunks) - 1
                 else chunk_cursor + duration * weight / total_weight
             )
-            cues.append(Cue(chunk_cursor, chunk_end, speaker, chunk))
+            cues.append(
+                Cue(
+                    chunk_cursor,
+                    chunk_end,
+                    speaker,
+                    _strip_subtitle_punctuation(chunk),
+                )
+            )
             chunk_cursor = chunk_end
 
         cursor += duration
