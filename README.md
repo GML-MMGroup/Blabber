@@ -10,10 +10,8 @@
 **One prompt. A full animated podcast show — dialogue, voices, lip sync, cameras, final cut. Fully automated, end to end.**
 
 
-[![License](https://pfst.cf2.poecdn.net/base/image/bc559dcb789965a729af04970ae270a606dd628045c12738cf0e2b09945ce0ce?pmaid=639574781)](./LICENSE)
 [![Stars](https://img.shields.io/github/stars/GML-MMGroup/Blabber?style=social)](https://github.com/GML-MMGroup/Blabber)
 [![Version](https://pfst.cf2.poecdn.net/base/image/d8617c7287e62a79e87bf1290fad68c5779fb435e813c276f13163b85354c97c?pmaid=639574779)](https://github.com/GML-MMGroup/Blabber/releases)
-[![Discord](https://pfst.cf2.poecdn.net/base/image/0b5fd2f10197888bc00517f9bad7947905b30d323ef0d1eed24484273bc310c8?pmaid=639574780)](https://discord.gg/yourlink)
 
 
 **English** · [简体中文](./README_zh.md) · [Live Demo](#) · [Documentation](#)
@@ -47,15 +45,15 @@
 
 ## 🌟 Showcase — Shows Across Topics
 
-> Real animated podcast episodes generated with Blabber, from a single prompt each.
+> Six 12-second excerpts from animated podcast episodes generated with Blabber.
 
-| 🧚 Fairy Tale | 🚗 New Car | 💻 Tech Talk |
+| 🧚 Fairy Tale | 💞 Modern Relationships | 🗣️ Low-EQ Behaviors |
 |:---:|:---:|:---:|
-| ![Fairy Tale](./assets/showcase/fairy-tale.gif) | ![New Car](./assets/showcase/new-car.gif) | ![Tech Talk](./assets/showcase/tech-talk.gif) |
+| <video src="./assets/showcase/fairy-tale.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/modern-relationships.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/low-eq-behaviors.mp4" controls muted preload="metadata" width="100%"></video> |
 
-| 🎬 Movie Review | 📚 Book Club | 🏀 Sports Banter |
+| 🎬 Movie Review | ☕ Coffee Culture | 🚗 New Car |
 |:---:|:---:|:---:|
-| ![Movie Review](./assets/showcase/movie-review.gif) | ![Book Club](./assets/showcase/book-club.gif) | ![Sports Banter](./assets/showcase/sports-banter.gif) |
+| <video src="./assets/showcase/movie-review.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/coffee-culture.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/new-car.mp4" controls muted preload="metadata" width="100%"></video> |
 
 ---
 
@@ -69,49 +67,11 @@ It's not just a one-shot video generator. Blabber turns every show into an **edi
 
 ## ✨ Core Features
 
-### 1. 🎯 One Prompt → A Full Episode
-No scripts, no recordings, no keyframes. Describe the topic, tone, length, and style — the system generates the **episode outline, two-host dialogue script, voice performances, lip-synced animation, camera plan, and final composition** automatically.
-
-### 2. 💬 AI Copilot — Create and Revise Through Conversation
-A chat panel lives right inside the editor. Say *"Make the intro punchier," "Give Host B a calmer voice," "Add a segment about latte art"* — the Copilot rewrites the script, re-voices the lines, and updates the timeline, without touching the parts you already like.
-
-### 3. 🤖 Specialized AI Agents Working Together
-A team of professional agents handles each stage of production:
-
-| Agent | Responsibility |
-|-------|---------------|
-| 🎬 **Showrunner** | Understands your prompt, plans episode structure, pacing & segments |
-| ✍️ **Dialogue Writer** | Two-host conversational script — hooks, banter, transitions, outro |
-| 🎙️ **Voice Director** | Casts voices for each host, controls emotion, tone & delivery |
-| 👄 **Lip-Sync Engine** | Syncs every mouth movement frame-accurately to the audio waveform |
-| 🎥 **Camera Director** | Plans shots — wide two-shots, close-ups, reaction cuts, cut timing |
-| 🎵 **Sound Designer** | Intro/outro music, ambience, transitions, loudness balancing |
-| 🎞️ **Final Compositor** | Assembles clips, audio & captions into the rendered final cut |
-
-### 4. 🗣️ Real Conversation, Not Alternating Monologues
-The dialogue engine writes genuine back-and-forth — interruptions, reactions, follow-up questions, laughter. On the timeline, each host's lines appear as **separate audio clips that alternate like a real conversation**, and each clip can be individually edited, re-voiced, or regenerated.
-
-### 5. 👄 Frame-Accurate Lip Sync
-Every syllable drives the character's mouth shapes. Change a line of dialogue, and the animation re-syncs automatically — no manual keyframing, ever.
-
-### 6. 🎥 Automated Camera Direction
-Blabber cuts like a real show director: wide shots to establish, close-ups on the speaker, reaction shots on the listener, with cut timing driven by the rhythm of the conversation.
-
-### 7. 🗂️ Bundled Release Library
-- **12 video characters** — Gaga, Awang, Cartoon, Luna, Milo, Anime, Flat Tech, and Low Poly hosts
-- **9 scenes** — zoo, studio, library, seaside, space, tea room, anime neon, flat tech, and low poly
-- **Character-matched voices** — a dedicated PodcastTTS voice prompt for each character
-
-Mix and match freely; a character stays visually consistent across every shot and every episode.
-
-### 8. ✂️ Fully Editable Clip-Based Timeline
-The generated show lands on an **editable timeline**, not a locked video file. Reorder clips, trim lines, swap voices, change camera angles, adjust music — then re-render only what changed.
-
-### 9. 🔄 Candidate Versions & Rollback
-Every regeneration appears as a **candidate version** first — preview, accept, reject, or roll back. Only confirmed versions enter your episode.
-
-### 10. 📤 Ready for Every Platform
-Export in 16:9, 9:16, or 1:1 with baked-in captions — ready for YouTube, TikTok, Bilibili, and podcast video feeds.
+- **End-to-end generation** — turn one prompt or document into a two-host script, voices, animation, captions, camera cuts, and a finished episode.
+- **Natural two-host conversation** — generate character-matched voices, reactions, follow-up questions, and editable line-by-line audio clips.
+- **Automated visual production** — frame-accurate lip sync, speaker-aware camera direction, and final FFmpeg composition.
+- **Conversational editing** — revise scripts, voices, shots, and timing through AI Copilot or the clip-based timeline, with candidate versions and rollback.
+- **Flexible presentation** — mix bundled characters and scenes, then export captioned videos for widescreen, vertical, or square platforms.
 
 ---
 
@@ -195,24 +155,6 @@ Sites publishes the web UI and its Worker only. The Python service in `mvp/` per
 `POST /api/mvp/document-jobs` uses PodcastTTS document mode (`action=0`). Send exactly one source: `input_url`, `input_text`, or an uploaded file as `file_name` plus `file_base64`; `topic` is optional. The UI accepts `.txt`, `.md`, `.html`, `.json`, `.csv`, `.docx`, and `.pdf` files up to 20 MB and shows the selected file name and size. Scanned PDFs must be OCRed first. The endpoint returns `202` with a job ID. Poll `GET /api/mvp/jobs/{id}`; the completed job includes `episode.turns`, `clips[].audio_url`, `audio_url`, and `provider_audio_url`.
 
 Jobs are persisted in `mvp/output/jobs-history.json`; read recent records from `GET /api/mvp/history`. The UI can restore saved scripts, audio slices, and videos, while identical new inputs reuse completed results without another paid request. During generation, `GET /api/mvp/jobs/{id}/events` streams accumulated script and audio slices over SSE.
-
----
-
-## 🤝 Contributing
-
-We welcome contributions of all kinds! Please see our [Contributing Guide](#) to get started.
-
-## 📄 License
-
-This project is licensed under the **[GNU General Public License v3.0](./LICENSE)**.
-
-You are free to run, study, share, and modify this software. Any distributed
-derivative work must also be released under the GPL v3, keeping the software
-free for all users. See the [LICENSE](./LICENSE) file for the full text.
-
-## 💬 Community
-
-- [Discord](#) · [Twitter/X](#) · [WeChat Group](#)
 
 <div align="center">
 

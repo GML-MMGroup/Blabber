@@ -991,19 +991,38 @@ def _sync_edited_script(job: dict, run_dir: Path, raw_episode) -> bool:
     return True
 
 
-def _save_jobs_locked() -> None:
+def _save_jobs_locked() -> bool:
     HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
     records = sorted(
         JOBS.values(),
         key=lambda item: str(item.get("updated_at", "")),
         reverse=True,
     )[:200]
-    temporary = HISTORY_PATH.with_suffix(".json.tmp")
-    temporary.write_text(
-        json.dumps(records, ensure_ascii=False, indent=2),
-        encoding="utf-8",
+    temporary = HISTORY_PATH.with_name(
+        f".{HISTORY_PATH.name}.{os.getpid()}.{threading.get_ident()}.{uuid.uuid4().hex}.tmp"
     )
-    temporary.replace(HISTORY_PATH)
+    try:
+        temporary.write_text(
+            json.dumps(records, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        for attempt in range(6):
+            try:
+                os.replace(temporary, HISTORY_PATH)
+                return True
+            except PermissionError as error:
+                if attempt == 5:
+                    print(f"[任务历史] 保存失败，继续保留内存状态：{error}", flush=True)
+                    return False
+                time.sleep(0.05 * (2 ** attempt))
+    except OSError as error:
+        print(f"[任务历史] 保存失败，继续保留内存状态：{error}", flush=True)
+        return False
+    finally:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def _store_job(job: dict) -> None:
