@@ -49,11 +49,13 @@
 
 | 🧚 Fairy Tale | 💞 Modern Relationships | 🗣️ Low-EQ Behaviors |
 |:---:|:---:|:---:|
-| <video src="./assets/showcase/fairy-tale.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/modern-relationships.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/low-eq-behaviors.mp4" controls muted preload="metadata" width="100%"></video> |
+| [![Fairy Tale](./assets/showcase/fairy-tale-poster.jpg)](./assets/showcase/fairy-tale.mp4?raw=1) | [![Modern Relationships](./assets/showcase/modern-relationships-poster.jpg)](./assets/showcase/modern-relationships.mp4?raw=1) | [![Low-EQ Behaviors](./assets/showcase/low-eq-behaviors-poster.jpg)](./assets/showcase/low-eq-behaviors.mp4?raw=1) |
+| [▶ Play 12s](./assets/showcase/fairy-tale.mp4?raw=1) | [▶ Play 12s](./assets/showcase/modern-relationships.mp4?raw=1) | [▶ Play 12s](./assets/showcase/low-eq-behaviors.mp4?raw=1) |
 
 | 🎬 Movie Review | ☕ Coffee Culture | 🚗 New Car |
 |:---:|:---:|:---:|
-| <video src="./assets/showcase/movie-review.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/coffee-culture.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/new-car.mp4" controls muted preload="metadata" width="100%"></video> |
+| [![Movie Review](./assets/showcase/movie-review-poster.jpg)](./assets/showcase/movie-review.mp4?raw=1) | [![Coffee Culture](./assets/showcase/coffee-culture-poster.jpg)](./assets/showcase/coffee-culture.mp4?raw=1) | [![New Car](./assets/showcase/new-car-poster.jpg)](./assets/showcase/new-car.mp4?raw=1) |
+| [▶ Play 12s](./assets/showcase/movie-review.mp4?raw=1) | [▶ Play 12s](./assets/showcase/coffee-culture.mp4?raw=1) | [▶ Play 12s](./assets/showcase/new-car.mp4?raw=1) |
 
 ---
 

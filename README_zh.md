@@ -47,11 +47,13 @@
 
 | 🧚 童话故事 | 💞 当代爱情观 | 🗣️ 低情商行为 |
 |:---:|:---:|:---:|
-| <video src="./assets/showcase/fairy-tale.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/modern-relationships.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/low-eq-behaviors.mp4" controls muted preload="metadata" width="100%"></video> |
+| [![童话故事](./assets/showcase/fairy-tale-poster.jpg)](./assets/showcase/fairy-tale.mp4?raw=1) | [![当代爱情观](./assets/showcase/modern-relationships-poster.jpg)](./assets/showcase/modern-relationships.mp4?raw=1) | [![低情商行为](./assets/showcase/low-eq-behaviors-poster.jpg)](./assets/showcase/low-eq-behaviors.mp4?raw=1) |
+| [▶ 播放 12 秒](./assets/showcase/fairy-tale.mp4?raw=1) | [▶ 播放 12 秒](./assets/showcase/modern-relationships.mp4?raw=1) | [▶ 播放 12 秒](./assets/showcase/low-eq-behaviors.mp4?raw=1) |
 
 | 🎬 电影评论 | ☕ 咖啡文化 | 🚗 新款汽车 |
 |:---:|:---:|:---:|
-| <video src="./assets/showcase/movie-review.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/coffee-culture.mp4" controls muted preload="metadata" width="100%"></video> | <video src="./assets/showcase/new-car.mp4" controls muted preload="metadata" width="100%"></video> |
+| [![电影评论](./assets/showcase/movie-review-poster.jpg)](./assets/showcase/movie-review.mp4?raw=1) | [![咖啡文化](./assets/showcase/coffee-culture-poster.jpg)](./assets/showcase/coffee-culture.mp4?raw=1) | [![新款汽车](./assets/showcase/new-car-poster.jpg)](./assets/showcase/new-car.mp4?raw=1) |
+| [▶ 播放 12 秒](./assets/showcase/movie-review.mp4?raw=1) | [▶ 播放 12 秒](./assets/showcase/coffee-culture.mp4?raw=1) | [▶ 播放 12 秒](./assets/showcase/new-car.mp4?raw=1) |
 
 ---
 
