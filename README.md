@@ -49,13 +49,13 @@
 
 | 🧚 Fairy Tale | 💞 Modern Relationships | 🗣️ Low-EQ Behaviors |
 |:---:|:---:|:---:|
-| [![Fairy Tale](./assets/showcase/fairy-tale-poster.jpg)](./assets/showcase/fairy-tale.mp4?raw=1) | [![Modern Relationships](./assets/showcase/modern-relationships-poster.jpg)](./assets/showcase/modern-relationships.mp4?raw=1) | [![Low-EQ Behaviors](./assets/showcase/low-eq-behaviors-poster.jpg)](./assets/showcase/low-eq-behaviors.mp4?raw=1) |
-| [▶ Play 12s](./assets/showcase/fairy-tale.mp4?raw=1) | [▶ Play 12s](./assets/showcase/modern-relationships.mp4?raw=1) | [▶ Play 12s](./assets/showcase/low-eq-behaviors.mp4?raw=1) |
+| [![Fairy Tale](./assets/showcase/fairy-tale-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/fairy-tale.mp4) | [![Modern Relationships](./assets/showcase/modern-relationships-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/modern-relationships.mp4) | [![Low-EQ Behaviors](./assets/showcase/low-eq-behaviors-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/low-eq-behaviors.mp4) |
+| [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/fairy-tale.mp4) | [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/modern-relationships.mp4) | [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/low-eq-behaviors.mp4) |
 
 | 🎬 Movie Review | ☕ Coffee Culture | 🚗 New Car |
 |:---:|:---:|:---:|
-| [![Movie Review](./assets/showcase/movie-review-poster.jpg)](./assets/showcase/movie-review.mp4?raw=1) | [![Coffee Culture](./assets/showcase/coffee-culture-poster.jpg)](./assets/showcase/coffee-culture.mp4?raw=1) | [![New Car](./assets/showcase/new-car-poster.jpg)](./assets/showcase/new-car.mp4?raw=1) |
-| [▶ Play 12s](./assets/showcase/movie-review.mp4?raw=1) | [▶ Play 12s](./assets/showcase/coffee-culture.mp4?raw=1) | [▶ Play 12s](./assets/showcase/new-car.mp4?raw=1) |
+| [![Movie Review](./assets/showcase/movie-review-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/movie-review.mp4) | [![Coffee Culture](./assets/showcase/coffee-culture-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/coffee-culture.mp4) | [![New Car](./assets/showcase/new-car-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/new-car.mp4) |
+| [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/movie-review.mp4) | [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/coffee-culture.mp4) | [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/new-car.mp4) |
 
 ---
 
