@@ -65,9 +65,9 @@ https://github.com/user-attachments/assets/06caadb8-45d2-446a-a4e2-08f43bdbbb83
 </tr>
 <tr>
 <td width=33% align=center>
-<strong>🎬 Movie Review</strong>
+<strong>🏛️ Government Policy Explainer</strong>
 
-https://github.com/user-attachments/assets/08e88909-3efe-43a3-ba24-dfed05e11209
+https://github.com/user-attachments/assets/028075e9-f092-4bbe-af21-8bfddf082234
 
 </td>
 <td width=33% align=center>
@@ -92,6 +92,29 @@ https://github.com/user-attachments/assets/1347eb74-3b3b-48f0-8e8a-27179794001a
 Blabber is an **AI production platform built for podcast video creation**. You don't record, animate, or edit anything — you just describe the show you want, and a team of AI agents orchestrates the entire journey: **topic planning → dialogue script → voice casting → speech synthesis → lip sync → camera direction → editing → final render.**
 
 It's not just a one-shot video generator. Blabber turns every show into an **editable project**: after generation, you can keep refining anything — a line of dialogue, a host's voice, a camera cut, a scene — through the built-in AI Copilot chat or directly on the clip-based timeline.
+
+### From topic to finished video
+
+<table>
+<tr>
+<td align="center"><strong>1. Describe the show</strong><br><sub>Enter a topic or upload source material.</sub><br><img src="assets/workflow/01-topic-input.jpg" alt="Enter a podcast topic in Blabber" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>2. Review the script</strong><br><sub>Check the generated outline, dialogue count, and estimated length.</sub><br><img src="assets/workflow/02-script-review.jpg" alt="Review the AI-generated podcast script" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>3. Choose the hosts</strong><br><sub>Pair the show with characters and matching voices.</sub><br><img src="assets/workflow/03-host-selection.jpg" alt="Choose podcast host characters" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>4. Select a scene</strong><br><sub>Pick a visual style and preview the composition.</sub><br><img src="assets/workflow/04-scene-selection.jpg" alt="Choose a podcast background scene" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>5. Preview the video</strong><br><sub>Review the finished episode and its render details.</sub><br><img src="assets/workflow/05-video-preview.jpg" alt="Preview the generated podcast video" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>6. Export the result</strong><br><sub>Export the video, cover image, or audio track.</sub><br><img src="assets/workflow/06-export.jpg" alt="Export the podcast video, cover, or audio" width="100%"></td>
+</tr>
+</table>
 
 ---
 
@@ -173,7 +196,15 @@ Sites publishes the web UI and its Worker only. The Python service in `mvp/` per
 
 ## 📚 Document Ingestion API
 
-`POST /api/mvp/document-jobs` uses PodcastTTS document mode (`action=0`). Send exactly one source: `input_url`, `input_text`, or an uploaded file as `file_name` plus `file_base64`; `topic` is optional. The UI accepts `.txt`, `.md`, `.html`, `.json`, `.csv`, `.docx`, and `.pdf` files up to 20 MB and shows the selected file name and size. Scanned PDFs must be OCRed first. The endpoint returns `202` with a job ID. Poll `GET /api/mvp/jobs/{id}`; the completed job includes `episode.turns`, `clips[].audio_url`, `audio_url`, and `provider_audio_url`.
+`POST /api/mvp/document-jobs` uses PodcastTTS document mode (`action=0`) and accepts a webpage or downloadable document URL, long text, or a local file. The UI accepts `.txt`, `.md`, `.html`, `.json`, `.csv`, `.docx`, and `.pdf` files up to 20 MB and shows the selected file name and size:
+
+```bash
+curl -X POST http://127.0.0.1:8787/api/mvp/document-jobs \
+  -H 'Content-Type: application/json' \
+  -d '{"input_url":"https://example.com/article","topic":"Article explainer"}'
+```
+
+Alternatively, use `{"input_text":"Document body...","topic":"Document explainer"}` or upload a Base64 file with `{"file_name":"report.pdf","file_base64":"...","topic":"Report explainer"}`. Provide exactly one of `input_url`, `input_text`, or the file upload fields; `topic` is optional. Scanned PDFs must be OCRed first. The endpoint returns `202` with a job ID. Poll `GET /api/mvp/jobs/{id}`; the completed job includes `episode.turns`, `clips[].audio_url`, `audio_url`, and `provider_audio_url`.
 
 Jobs are persisted in `mvp/output/jobs-history.json`; read recent records from `GET /api/mvp/history`. The UI can restore saved scripts, audio slices, and videos, while identical new inputs reuse completed results without another paid request. During generation, `GET /api/mvp/jobs/{id}/events` streams accumulated script and audio slices over SSE.
 

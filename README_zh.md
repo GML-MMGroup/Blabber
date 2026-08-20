@@ -63,9 +63,9 @@ https://github.com/user-attachments/assets/06caadb8-45d2-446a-a4e2-08f43bdbbb83
 </tr>
 <tr>
 <td width=33% align=center>
-<strong>🎬 电影评论</strong>
+<strong>🏛️ 政府政策解读</strong>
 
-https://github.com/user-attachments/assets/08e88909-3efe-43a3-ba24-dfed05e11209
+https://github.com/user-attachments/assets/028075e9-f092-4bbe-af21-8bfddf082234
 
 </td>
 <td width=33% align=center>
@@ -90,6 +90,29 @@ https://github.com/user-attachments/assets/1347eb74-3b3b-48f0-8e8a-27179794001a
 Blabber 是一个**专为播客视频创作打造的 AI 生产平台**。你不需要录音、不需要做动画、也不需要剪辑 — 只需描述你想要的节目，一支 AI Agent 团队就会编排整个制作流程：**选题策划 → 对白脚本 → 音色选角 → 语音合成 → 口型同步 → 运镜编排 → 剪辑 → 最终渲染。**
 
 它不是"一键出片就结束"的生成器。Blabber 会把每期节目变成一个**可编辑的工程项目**：生成之后，你可以继续打磨任何细节 — 一句台词、一位主持人的音色、一个镜头切换、一处场景 — 既可以在内置的 AI Copilot 对话框里说出来，也可以直接在片段式时间线上动手改。
+
+### 从选题到成片
+
+<table>
+<tr>
+<td align="center"><strong>1. 描述节目主题</strong><br><sub>输入选题，或上传参考资料。</sub><br><img src="assets/workflow/01-topic-input.jpg" alt="在 Blabber 中输入播客主题" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>2. 确认播客脚本</strong><br><sub>查看脚本结构、对话分段和预计时长。</sub><br><img src="assets/workflow/02-script-review.jpg" alt="确认 AI 生成的播客脚本" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>3. 选择主持人</strong><br><sub>搭配角色、音色、语速和音量。</sub><br><img src="assets/workflow/03-host-selection.jpg" alt="选择播客主持人角色" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>4. 选择背景场景</strong><br><sub>确定画面风格并实时预览合成效果。</sub><br><img src="assets/workflow/04-scene-selection.jpg" alt="选择播客背景场景" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>5. 预览生成视频</strong><br><sub>检查完整成片和视频参数。</sub><br><img src="assets/workflow/05-video-preview.jpg" alt="预览生成的播客视频" width="100%"></td>
+</tr>
+<tr>
+<td align="center"><strong>6. 导出制作结果</strong><br><sub>导出视频、封面或独立音频。</sub><br><img src="assets/workflow/06-export.jpg" alt="导出播客视频、封面或音频" width="100%"></td>
+</tr>
+</table>
 
 ---
 
