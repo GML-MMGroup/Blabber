@@ -38,6 +38,7 @@
 
 - **[2026-07-21]** 🎉 Blabber officially launched on GitHub!
 - **[2026-08-07]** 🚀 Released the first version with the Zoo scene and two video-ready hosts: Gaga and Awang.
+- **[2026-08-20]** ✨ Major update since August 7: added Luna, Milo, and more scenes; expanded dual-host voice controls and script, subtitle, and timeline editing; introduced parallel rendering, clearer generation feedback, LAN deployment, and improved audio/video sync stability.
 
 <!-- 后续更新持续追加到这里 -->
 
