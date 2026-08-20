@@ -46,46 +46,46 @@
 > 以下是 6 期 Blabber 真实生成的动画播客节目，每段展示 12 秒。
 
 <table>
-  <tr>
-    <td width=33% align=center>
-      <strong>🧚 童话故事</strong>
+<tr>
+<td width=33% align=center>
+<strong>🧚 童话故事</strong>
 
 https://github.com/user-attachments/assets/3ed13a6b-0850-4b57-b7ab-07f900d278a6
 
-    </td>
-    <td width=33% align=center>
-      <strong>💞 当代爱情观</strong>
+</td>
+<td width=33% align=center>
+<strong>💞 当代爱情观</strong>
 
 https://github.com/user-attachments/assets/6274e261-fea9-4d0d-add0-4d51e6aa4584
 
-    </td>
-    <td width=33% align=center>
-      <strong>🗣️ 低情商行为</strong>
+</td>
+<td width=33% align=center>
+<strong>🗣️ 低情商行为</strong>
 
 https://github.com/user-attachments/assets/06caadb8-45d2-446a-a4e2-08f43bdbbb83
 
-    </td>
-  </tr>
-  <tr>
-    <td width=33% align=center>
-      <strong>🎬 电影评论</strong>
+</td>
+</tr>
+<tr>
+<td width=33% align=center>
+<strong>🎬 电影评论</strong>
 
 https://github.com/user-attachments/assets/58d03bf6-3e9e-4d61-b20f-d42436f3f094
 
-    </td>
-    <td width=33% align=center>
-      <strong>☕ 咖啡文化</strong>
+</td>
+<td width=33% align=center>
+<strong>☕ 咖啡文化</strong>
 
 https://github.com/user-attachments/assets/08e88909-3efe-43a3-ba24-dfed05e11209
 
-    </td>
-    <td width=33% align=center>
-      <strong>🚗 新款汽车</strong>
+</td>
+<td width=33% align=center>
+<strong>🚗 新款汽车</strong>
 
 https://github.com/user-attachments/assets/1347eb74-3b3b-48f0-8e8a-27179794001a
 
-    </td>
-  </tr>
+</td>
+</tr>
 </table>
 
 ---
