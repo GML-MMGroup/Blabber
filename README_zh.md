@@ -47,44 +47,40 @@
 
 <table>
   <tr>
-    <th>🧚 童话故事</th>
-    <th>💞 当代爱情观</th>
-    <th>🗣️ 低情商行为</th>
-  </tr>
-  <tr>
-    <td>
+    <td width=33% align=center>
+      <strong>🧚 童话故事</strong>
 
 https://github.com/user-attachments/assets/3ed13a6b-0850-4b57-b7ab-07f900d278a6
 
     </td>
-    <td>
+    <td width=33% align=center>
+      <strong>💞 当代爱情观</strong>
 
 https://github.com/user-attachments/assets/6274e261-fea9-4d0d-add0-4d51e6aa4584
 
     </td>
-    <td>
+    <td width=33% align=center>
+      <strong>🗣️ 低情商行为</strong>
 
 https://github.com/user-attachments/assets/06caadb8-45d2-446a-a4e2-08f43bdbbb83
 
     </td>
   </tr>
   <tr>
-    <th>🎬 电影评论</th>
-    <th>☕ 咖啡文化</th>
-    <th>🚗 新款汽车</th>
-  </tr>
-  <tr>
-    <td>
+    <td width=33% align=center>
+      <strong>🎬 电影评论</strong>
 
 https://github.com/user-attachments/assets/58d03bf6-3e9e-4d61-b20f-d42436f3f094
 
     </td>
-    <td>
+    <td width=33% align=center>
+      <strong>☕ 咖啡文化</strong>
 
 https://github.com/user-attachments/assets/08e88909-3efe-43a3-ba24-dfed05e11209
 
     </td>
-    <td>
+    <td width=33% align=center>
+      <strong>🚗 新款汽车</strong>
 
 https://github.com/user-attachments/assets/1347eb74-3b3b-48f0-8e8a-27179794001a
 

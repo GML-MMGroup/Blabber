@@ -49,44 +49,40 @@
 
 <table>
   <tr>
-    <th>🧚 Fairy Tale</th>
-    <th>💞 Modern Relationships</th>
-    <th>🗣️ Low-EQ Behaviors</th>
-  </tr>
-  <tr>
-    <td>
+    <td width=33% align=center>
+      <strong>🧚 Fairy Tale</strong>
 
 https://github.com/user-attachments/assets/3ed13a6b-0850-4b57-b7ab-07f900d278a6
 
     </td>
-    <td>
+    <td width=33% align=center>
+      <strong>💞 Modern Relationships</strong>
 
 https://github.com/user-attachments/assets/6274e261-fea9-4d0d-add0-4d51e6aa4584
 
     </td>
-    <td>
+    <td width=33% align=center>
+      <strong>🗣️ Low-EQ Behaviors</strong>
 
 https://github.com/user-attachments/assets/06caadb8-45d2-446a-a4e2-08f43bdbbb83
 
     </td>
   </tr>
   <tr>
-    <th>🎬 Movie Review</th>
-    <th>☕ Coffee Culture</th>
-    <th>🚗 New Car</th>
-  </tr>
-  <tr>
-    <td>
+    <td width=33% align=center>
+      <strong>🎬 Movie Review</strong>
 
 https://github.com/user-attachments/assets/58d03bf6-3e9e-4d61-b20f-d42436f3f094
 
     </td>
-    <td>
+    <td width=33% align=center>
+      <strong>☕ Coffee Culture</strong>
 
 https://github.com/user-attachments/assets/08e88909-3efe-43a3-ba24-dfed05e11209
 
     </td>
-    <td>
+    <td width=33% align=center>
+      <strong>🚗 New Car</strong>
 
 https://github.com/user-attachments/assets/1347eb74-3b3b-48f0-8e8a-27179794001a
 
