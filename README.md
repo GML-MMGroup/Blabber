@@ -22,13 +22,7 @@
 
 ## 🎬 Product Trailer
 
-<div align="center">
-  <!-- Product trailer placeholder: replace the thumbnail below with the final promotional video. -->
-  <img src="./assets/demo/final-studio-preview.jpg" alt="Product trailer placeholder" width="90%" />
-  <p><em>This section preserves the product-trailer placement and will be replaced with the official promotional video.</em></p>
-</div>
-
-<br/>
+<!-- Product trailer pending release. -->
 
 > Just type one sentence — *"Make a podcast about coffee culture"* — and Blabber writes the dialogue, casts two hosts, voices every line, syncs every lip movement to the audio waveform, directs the cameras, and renders the final cut. **You describe the show. The agents make it.**
 
