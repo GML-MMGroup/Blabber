@@ -47,15 +47,52 @@
 
 > Six 12-second excerpts from animated podcast episodes generated with Blabber.
 
-| 🧚 Fairy Tale | 💞 Modern Relationships | 🗣️ Low-EQ Behaviors |
-|:---:|:---:|:---:|
-| [![Fairy Tale](./assets/showcase/fairy-tale-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/fairy-tale.mp4) | [![Modern Relationships](./assets/showcase/modern-relationships-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/modern-relationships.mp4) | [![Low-EQ Behaviors](./assets/showcase/low-eq-behaviors-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/low-eq-behaviors.mp4) |
-| [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/fairy-tale.mp4) | [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/modern-relationships.mp4) | [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/low-eq-behaviors.mp4) |
+<table>
+  <tr>
+    <th>🧚 Fairy Tale</th>
+    <th>💞 Modern Relationships</th>
+    <th>🗣️ Low-EQ Behaviors</th>
+  </tr>
+  <tr>
+    <td>
 
-| 🎬 Movie Review | ☕ Coffee Culture | 🚗 New Car |
-|:---:|:---:|:---:|
-| [![Movie Review](./assets/showcase/movie-review-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/movie-review.mp4) | [![Coffee Culture](./assets/showcase/coffee-culture-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/coffee-culture.mp4) | [![New Car](./assets/showcase/new-car-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/new-car.mp4) |
-| [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/movie-review.mp4) | [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/coffee-culture.mp4) | [▶ Play 12s](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/new-car.mp4) |
+https://github.com/user-attachments/assets/3ed13a6b-0850-4b57-b7ab-07f900d278a6
+
+    </td>
+    <td>
+
+https://github.com/user-attachments/assets/6274e261-fea9-4d0d-add0-4d51e6aa4584
+
+    </td>
+    <td>
+
+https://github.com/user-attachments/assets/06caadb8-45d2-446a-a4e2-08f43bdbbb83
+
+    </td>
+  </tr>
+  <tr>
+    <th>🎬 Movie Review</th>
+    <th>☕ Coffee Culture</th>
+    <th>🚗 New Car</th>
+  </tr>
+  <tr>
+    <td>
+
+https://github.com/user-attachments/assets/58d03bf6-3e9e-4d61-b20f-d42436f3f094
+
+    </td>
+    <td>
+
+https://github.com/user-attachments/assets/08e88909-3efe-43a3-ba24-dfed05e11209
+
+    </td>
+    <td>
+
+https://github.com/user-attachments/assets/1347eb74-3b3b-48f0-8e8a-27179794001a
+
+    </td>
+  </tr>
+</table>
 
 ---
 

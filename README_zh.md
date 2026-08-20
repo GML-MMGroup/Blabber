@@ -45,15 +45,52 @@
 
 > 以下是 6 期 Blabber 真实生成的动画播客节目，每段展示 12 秒。
 
-| 🧚 童话故事 | 💞 当代爱情观 | 🗣️ 低情商行为 |
-|:---:|:---:|:---:|
-| [![童话故事](./assets/showcase/fairy-tale-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/fairy-tale.mp4) | [![当代爱情观](./assets/showcase/modern-relationships-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/modern-relationships.mp4) | [![低情商行为](./assets/showcase/low-eq-behaviors-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/low-eq-behaviors.mp4) |
-| [▶ 播放 12 秒](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/fairy-tale.mp4) | [▶ 播放 12 秒](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/modern-relationships.mp4) | [▶ 播放 12 秒](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/low-eq-behaviors.mp4) |
+<table>
+  <tr>
+    <th>🧚 童话故事</th>
+    <th>💞 当代爱情观</th>
+    <th>🗣️ 低情商行为</th>
+  </tr>
+  <tr>
+    <td>
 
-| 🎬 电影评论 | ☕ 咖啡文化 | 🚗 新款汽车 |
-|:---:|:---:|:---:|
-| [![电影评论](./assets/showcase/movie-review-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/movie-review.mp4) | [![咖啡文化](./assets/showcase/coffee-culture-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/coffee-culture.mp4) | [![新款汽车](./assets/showcase/new-car-poster.jpg)](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/new-car.mp4) |
-| [▶ 播放 12 秒](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/movie-review.mp4) | [▶ 播放 12 秒](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/coffee-culture.mp4) | [▶ 播放 12 秒](https://cdn.jsdelivr.net/gh/GML-MMGroup/Blabber@main/assets/showcase/new-car.mp4) |
+https://github.com/user-attachments/assets/3ed13a6b-0850-4b57-b7ab-07f900d278a6
+
+    </td>
+    <td>
+
+https://github.com/user-attachments/assets/6274e261-fea9-4d0d-add0-4d51e6aa4584
+
+    </td>
+    <td>
+
+https://github.com/user-attachments/assets/06caadb8-45d2-446a-a4e2-08f43bdbbb83
+
+    </td>
+  </tr>
+  <tr>
+    <th>🎬 电影评论</th>
+    <th>☕ 咖啡文化</th>
+    <th>🚗 新款汽车</th>
+  </tr>
+  <tr>
+    <td>
+
+https://github.com/user-attachments/assets/58d03bf6-3e9e-4d61-b20f-d42436f3f094
+
+    </td>
+    <td>
+
+https://github.com/user-attachments/assets/08e88909-3efe-43a3-ba24-dfed05e11209
+
+    </td>
+    <td>
+
+https://github.com/user-attachments/assets/1347eb74-3b3b-48f0-8e8a-27179794001a
+
+    </td>
+  </tr>
+</table>
 
 ---
 
