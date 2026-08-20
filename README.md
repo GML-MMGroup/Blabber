@@ -105,15 +105,6 @@ It's not just a one-shot video generator. Blabber turns every show into an **edi
 
 ---
 
-## 🏗️ How It Works
-💡 Prompt → 🎬 Episode Plan → ✍️ Dialogue Script → 🎙️ Voice Performance
-↓
-🚀 Final Cut ← 🎞️ Composition ← 🎵 Sound ← 🎥 Camera Direction ← 👄 Lip Sync
-
-All orchestrated by AI agents, fully editable in the built-in editor.
-
----
-
 ## 🛠️ Complete Local Installation
 
 Prerequisites:
